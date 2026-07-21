@@ -9013,8 +9013,12 @@ function renderRotation(){
       <td><select data-i="${i}" class="typeSel">
             <option value="Load" ${call.callType==='Load'?'selected':''}>Load</option>
             <option value="Discharge" ${call.callType==='Discharge'?'selected':''}>Discharge</option>
+            <option value="Bunkering" ${call.callType==='Bunkering'?'selected':''}>Bunkering</option>
+            <option value="OwnersMatter" ${call.callType==='OwnersMatter'?'selected':''}>Owners Matter</option>
           </select></td>
-      <td><input type="number" data-i="${i}" class="cargoPctInp" value="${call.cargoPct!==undefined?call.cargoPct:100}" step="5" min="0" max="100" title="% of total cargo loaded or discharged at this call — matters when loading/discharging across more than one port"></td>
+      <td>${(call.callType==='Load'||call.callType==='Discharge')
+            ? `<input type="number" data-i="${i}" class="cargoPctInp" value="${call.cargoPct!==undefined?call.cargoPct:100}" step="5" min="0" max="100" title="% of total cargo loaded or discharged at this call — matters when loading/discharging across more than one port">`
+            : `<span style="color:var(--text-mute); display:block; text-align:center;" title="Not a cargo operation — the vessel keeps whatever it was already carrying (or empty) through this stop">—</span>`}</td>
       <td><input type="number" data-i="${i}" class="daysInp" value="${call.days}" step="0.5" min="0"></td>
       <td><input type="number" data-i="${i}" class="portDutyInp" value="${call.portDuty||0}" step="100" min="0"></td>
       <td class="rowbtns">
@@ -9488,7 +9492,9 @@ function runCalc(){
   }).join('');
 
   // ---- port days table ----
-  let portHtml = rotation.map((c,i)=>`<tr><td><span class="badge ${c.callType==='Load'?'load':'disch'}">${c.callType}</span> ${NODES[c.port].name}</td><td class="num">${fmt(c.days,2)}</td><td class="num">${money(portDutyByCall[i])}</td></tr>`).join('');
+  const callTypeBadgeClass = {Load:'load', Discharge:'disch', Bunkering:'boundary', OwnersMatter:'ballast'};
+  const callTypeLabel = {Load:'Load', Discharge:'Discharge', Bunkering:'Bunkering', OwnersMatter:'Owners Matter'};
+  let portHtml = rotation.map((c,i)=>`<tr><td><span class="badge ${callTypeBadgeClass[c.callType]||'disch'}">${callTypeLabel[c.callType]||c.callType}</span> ${NODES[c.port].name}</td><td class="num">${fmt(c.days,2)}</td><td class="num">${money(portDutyByCall[i])}</td></tr>`).join('');
 
   resultsArea.innerHTML = `
     ${(Math.abs(loadPctTotal-100)>0.5 || Math.abs(dischPctTotal-100)>0.5) ? `<div class="note" style="background:#fbeee9; border:1px solid var(--disch); color:var(--disch); padding:8px 12px; border-radius:6px; margin-bottom:12px;">
