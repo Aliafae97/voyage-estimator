@@ -122,6 +122,15 @@
   .portSearchOpt:hover, .portSearchOpt.active{ background:#e9e0c8; }
   .portDutyInp{ width:100%; text-align:right; font-family:Georgia,serif; font-size:14px; padding:6px 8px;
         border:1px solid var(--parchment-line); border-radius:4px; background:#fffdf8; color:var(--text-dark); }
+@media print {
+  .no-print, .header-toolbar, #reportActions { display:none !important; }
+  body { background:#fff; }
+  .panel { box-shadow:none; border:none; padding:0; }
+  #printReportHeader { display:block !important; }
+}
+#printReportHeader { display:none; margin-bottom:14px; padding-bottom:10px; border-bottom:2px solid var(--brass); }
+#printReportHeader h1 { font-size:20px; margin:0 0 4px 0; }
+#printReportHeader .meta { font-size:12px; color:var(--text-mute); }
 </style>
 </head>
 <body>
@@ -132,17 +141,17 @@
     <p class="sub">Build a port rotation of any length, set your hire, bunker and consumption variables, and get sea time, port time, and total voyage cost — distances are routed through real shipping lanes and chokepoints, not straight lines.</p>
   </header>
 
-  <div class="panel">
+  <div class="panel no-print">
     <h2 class="sec">Port Rotation</h2>
     <datalist id="allPortsDatalist"></datalist>
     <table class="rot" id="rotTable">
-      <thead><tr><th style="width:36px">#</th><th>Port</th><th style="width:110px">Call Type</th><th style="width:90px">Cargo %</th><th style="width:110px">Days Alongside</th><th style="width:120px">Port Duty (USD)</th><th style="width:70px"></th></tr></thead>
+      <thead><tr><th style="width:36px">#</th><th>Port</th><th style="width:110px">Call Type</th><th style="width:110px">Days Alongside</th><th style="width:120px">Port Duty (USD)</th><th style="width:70px"></th></tr></thead>
       <tbody id="rotBody"></tbody>
     </table>
     <button class="addrow" id="addRow">+ Add Port Call</button>
   </div>
 
-  <div class="panel">
+  <div class="panel no-print">
     <h2 class="sec">Voyage Variables</h2>
     <div class="vargrid">
       <div class="field"><label>Speed (knots)</label><input type="number" id="speed" value="12" step="0.5"></div>
@@ -178,26 +187,28 @@
         <select id="freight_basis">
           <option value="lumpsum">Lump Sum (USD)</option>
           <option value="permt">Per Tonne (USD/mt)</option>
+          <option value="worldscale">Worldscale (WS)</option>
         </select>
       </div>
-      <div class="field"><label id="freight_value_label">Freight Amount (USD)</label><input type="number" id="freight_value" value="0" step="1000"><div id="freight_suggest_note" style="font-size:11px; color:var(--text-mute); margin-top:3px;"></div></div>
-      <div class="field" style="grid-column:span 2; justify-content:flex-end;"><span style="font-size:11.5px; color:var(--text-mute); line-height:1.4;">Enter either a flat lump sum for the whole voyage, or a USD/mt rate — it's multiplied by Cargo Tonnage above. This feeds Voyage Profit and TCE below.</span></div>
+      <div class="field" id="freight_value_wrap"><label id="freight_value_label">Freight Amount (USD)</label><input type="number" id="freight_value" value="0" step="1000"><div id="freight_suggest_note" style="font-size:11px; color:var(--text-mute); margin-top:3px;"></div></div>
+      <div class="field" id="ws_points_wrap" style="display:none;"><label>WS Points (e.g. 120 = WS120)</label><input type="number" id="ws_points" value="100" step="1"></div>
+      <div class="field" id="ws_flatrate_wrap" style="display:none;"><label id="ws_flatrate_label">Flat Rate (USD/mt)</label><input type="number" id="ws_flatrate" value="0" step="0.1"><div id="ws_flatrate_note" style="font-size:11px; color:var(--text-mute); margin-top:3px;"></div></div>
+      <div class="field"><label>Broker Commission (%)</label><input type="number" id="broker_commission" value="0" step="0.25" min="0" max="100"></div>
+      <div class="field" style="grid-column:span 2; justify-content:flex-end;"><span style="font-size:11.5px; color:var(--text-mute); line-height:1.4;">Lump sum or USD/mt feed Cargo Tonnage directly; Worldscale computes Freight = WS% × Flat Rate × Cargo Tonnage. Broker Commission is deducted before Voyage Profit and TCE.</span></div>
 
-      <div class="fuelhead">Vessel Type</div>
+      <div class="fuelhead">Vessel</div>
       <div class="field" style="grid-column:span 2;">
         <label>Select to auto-fill Consumption, Port Duty &amp; Freight Rate (all remain editable)</label>
         <select id="vessel_type">
           <option value="">— none (manual entry) —</option>
-          <option value="MR ECO">MR Eco</option>
-          <option value="MR NORMAL">MR Normal</option>
-          <option value="MR OLD">MR Old</option>
-          <option value="LR1">LR1</option>
-          <option value="LR2">LR2</option>
-          <option value="AFRA">Aframax</option>
-          <option value="SUEZ S ECO">Suezmax Eco</option>
-          <option value="SUEZ 2025">Suezmax 2025</option>
-          <option value="SUEZ">Suezmax</option>
-          <option value="VLCC">VLCC</option>
+          <option value="RIGEL">Rigel</option>
+          <option value="PACIFIC PRIDE">Pacific Pride</option>
+          <option value="PACIFIC PIONEER">Pacific Pioneer</option>
+          <option value="PACIFIC EXPLORER">Pacific Explorer</option>
+          <option value="PACIFIC SPIRIT">Pacific Spirit</option>
+          <option value="PACIFIC ADVENTURE">Pacific Adventure</option>
+          <option value="PACIFIC HORIZON">Pacific Horizon</option>
+          <option value="PACIFIC INFINITY">Pacific Infinity</option>
         </select>
       </div>
       <div class="field"></div>
@@ -211,24 +222,30 @@
       <div class="fuelhead">Consumption While Sailing — Ballast (mt / day)</div>
       <div class="field"><label>HSFO</label><input type="number" id="cs_hsfo_ballast" value="0" step="0.5"></div>
       <div class="field"><label>VLSFO</label><input type="number" id="cs_vlsfo_ballast" value="20" step="0.5"></div>
-      <div class="field"><label>LSMGO</label><input type="number" id="cs_lsmgo_ballast" value="1" step="0.5"></div>
+      <div class="field"><label>LSMGO</label><input type="number" id="cs_lsmgo_ballast" value="0" step="0.5"></div>
       <div class="field"></div>
 
       <div class="fuelhead">Consumption While Sailing — Laden (mt / day)</div>
       <div class="field"><label>HSFO</label><input type="number" id="cs_hsfo_laden" value="0" step="0.5"></div>
       <div class="field"><label>VLSFO</label><input type="number" id="cs_vlsfo_laden" value="24" step="0.5"></div>
-      <div class="field"><label>LSMGO</label><input type="number" id="cs_lsmgo_laden" value="1" step="0.5"></div>
+      <div class="field"><label>LSMGO</label><input type="number" id="cs_lsmgo_laden" value="0" step="0.5"></div>
       <div class="field"></div>
 
-      <div class="fuelhead">Consumption In Port (mt / day)</div>
-      <div class="field"><label>HSFO</label><input type="number" id="cp_hsfo" value="0" step="0.5"></div>
-      <div class="field"><label>VLSFO</label><input type="number" id="cp_vlsfo" value="3" step="0.5"></div>
-      <div class="field"><label>LSMGO</label><input type="number" id="cp_lsmgo" value="2" step="0.5"></div>
+      <div class="fuelhead">Consumption In Port — Loading (mt / day)</div>
+      <div class="field"><label>HSFO</label><input type="number" id="cp_hsfo_load" value="0" step="0.5"></div>
+      <div class="field"><label>VLSFO</label><input type="number" id="cp_vlsfo_load" value="3" step="0.5"></div>
+      <div class="field"><label>LSMGO</label><input type="number" id="cp_lsmgo_load" value="0" step="0.5"></div>
+      <div class="field"></div>
+
+      <div class="fuelhead">Consumption In Port — Discharging (mt / day)</div>
+      <div class="field"><label>HSFO</label><input type="number" id="cp_hsfo_disch" value="0" step="0.5"></div>
+      <div class="field"><label>VLSFO</label><input type="number" id="cp_vlsfo_disch" value="3" step="0.5"></div>
+      <div class="field"><label>LSMGO</label><input type="number" id="cp_lsmgo_disch" value="2" step="0.5"></div>
     </div>
     <button id="calc">Calculate Voyage</button>
   </div>
 
-  <div class="panel">
+  <div class="panel no-print">
     <h2 class="sec">Draw a Custom Route (optional)</h2>
     <div class="drawbar">
       <select id="legPicker"></select>
@@ -247,11 +264,20 @@
     </div>
   </div>
 
-  <div class="panel" style="padding:10px;">
+  <div class="panel no-print" style="padding:10px;">
     <div id="map"></div>
   </div>
 
   <div class="panel">
+    <div id="reportActions" style="display:flex; gap:10px; margin-bottom:14px; align-items:center;">
+      <button class="btn-ghost" id="downloadPdfBtn">Download Report (PDF)</button>
+      <button class="btn-ghost" id="downloadImgBtn">Download Report (Image)</button>
+      <span style="font-size:11.5px; color:var(--text-mute);">PDF opens your browser's print dialog — choose "Save as PDF" as the destination.</span>
+    </div>
+    <div id="printReportHeader">
+      <h1>Voyage Cost Estimate</h1>
+      <div class="meta" id="printReportMeta"></div>
+    </div>
     <div id="resultsArea"><div class="placeholder">Set up your rotation and variables, then hit Calculate Voyage.</div></div>
   </div>
 
@@ -8861,6 +8887,53 @@ const PIRACY_EDGE_SET = pairSet(PIRACY_EDGES);
 // every value the user sees remains a normal, freely-editable input, never locked or read-only.
 const PORT_COST_REF = {"new_york":{"MR":45000,"LR1":55000,"LR2":75000},"rotterdam":{"MR":55000,"LR1":85000,"LR2":90000,"SUEZ":150000},"brisbane":{"MR":45000,"LR1":60000,"LR2":90000},"buenos_aires":{"MR":110000,"LR1":135000,"LR2":170000},"callao":{"MR":60000},"cape_town":{"MR":25000,"LR1":30000,"LR2":45000},"chittagong":{"MR":35000,"LR1":50000,"LR2":65000},"chennai":{"MR":55000,"LR1":85000,"LR2":135000},"colombo":{"MR":15000,"LR1":20000,"LR2":25000},"dar_es_salaam":{"MR":40000,"LR1":50000,"LR2":120000,"AFRA":120000},"djibouti":{"MR":15000,"LR1":20000},"dumai":{"MR":50000,"LR1":60000,"LR2":75000},"durban":{"MR":25000,"LR1":35000,"LR2":45000},"ennore":{"MR":55000,"LR1":75000,"LR2":110000},"fujairah":{"MR":12500,"LR1":17500,"LR2":25000},"haldia":{"LR1":20000},"ho_chi_minh":{"MR":30000},"hong_kong":{"MR":35000,"LR1":35000},"houston":{"MR":40000,"LR1":65000,"LR2":90000},"jakarta":{"MR":30000,"LR1":35000,"LR2":40000},"jebel_ali":{"MR":25000,"LR1":30000,"LR2":45000},"jubail":{"MR":25000,"LR1":30000,"LR2":35000},"kandla":{"MR":65000,"LR1":90000,"LR2":125000},"lagos":{"MR":30000,"LR1":35000,"LR2":45000},"los_angeles":{"MR":100000,"LR1":125000,"LR2":150000},"luanda":{"LR2":50000},"medan":{"MR":30000},"melbourne":{"MR":55000,"LR1":80000,"LR2":95000},"mombasa":{"MR":30000,"LR1":35000,"LR2":55000},"new_mangalore":{"MR":40000,"LR1":50000,"LR2":70000},"ningbo":{"LR2":75000},"paradip":{"MR":90000,"LR1":100000,"LR2":115000},"pasir_gudang":{"MR":20000,"LR1":30000,"LR2":30000},"port_klang":{"MR":20000,"LR1":30000,"LR2":30000},"port_sudan":{"MR":40000},"qingdao":{"MR":25000,"LR1":35000,"LR2":75000},"ras_tanura":{"MR":20000,"LR1":25000,"LR2":30000},"rio_de_janeiro":{"MR":50000},"santos":{"MR":50000},"shanghai":{"MR":25000,"LR1":40000,"LR2":55000},"singapore":{"MR":22500,"LR1":25000,"LR2":30000},"suape":{"MR":60000,"LR1":75000,"LR2":110000},"suez":{"MR":50000},"visakhapatnam":{"MR":70000,"LR1":100000,"LR2":140000},"walvis_bay":{"MR":50000,"LR1":55000,"LR2":60000},"yanbu":{"MR":10000,"LR1":10000,"LR2":10000},"fremantle":{"MR":32500},"surabaya":{"MR":45000},"kaohsiung":{"MR":22500,"LR1":35000,"LR2":50000},"vancouver":{"LR2":180000},"tokyo":{"LR1":80000}};
 const CONSUMPTION_REF = {"AFRA":{"ballast":24.5,"laden":35,"idle":6,"load":10,"disch":42.5,"heating":0},"LR1":{"ballast":17,"laden":25,"idle":5,"load":6,"disch":30,"heating":0},"LR2":{"ballast":24.5,"laden":35,"idle":6,"load":10,"disch":42.5,"heating":0},"MR ECO":{"ballast":16,"laden":20,"idle":6,"load":8,"disch":19,"heating":0},"MR NORMAL":{"ballast":24,"laden":26,"idle":5,"load":5,"disch":15,"heating":0},"MR OLD":{"ballast":25,"laden":28,"idle":5,"load":5,"disch":25,"heating":0},"SUEZ":{"ballast":44,"laden":53,"idle":10,"load":12,"disch":68,"heating":0},"VLCC":{"ballast":53,"laden":70,"idle":10,"load":20,"disch":110,"heating":0},"SUEZ S ECO":{"ballast":24.5,"laden":30,"idle":5,"load":6,"disch":7,"heating":0},"SUEZ 2025":{"ballast":28.7,"laden":41.9,"idle":8,"load":20,"disch":80,"heating":0}};
+
+// Real fleet, from each vessel's Q88 (INTERTANKO Chartering Questionnaire). Consumption is NOT
+// vessel-specific yet — no exact per-vessel, per-speed consumption sheet has been provided. Each
+// vessel is mapped to the closest generic class (consumClass) purely as an interim estimate,
+// justified by its own real build year and main engine type (electronically-controlled "ME-C"
+// engines from 2025/2026 builds -> MR Eco; older mechanically-controlled "MC" engine -> MR Old).
+// mainFuel reflects each vessel's actual Q88 answer + scrubber (EGCS) fitment: scrubber-fitted
+// vessels burn HSFO (cheaper, high-sulphur, legal because the scrubber cleans the exhaust);
+// the one vessel with no scrubber on file must run compliant low-sulphur fuel (VLSFO) instead,
+// regardless of "HFO" being the generic term used on its own form.
+// This mapping — and the whole approach — should be replaced the moment real per-vessel figures
+// are available.
+const VESSEL_REF = {
+  "RIGEL": {imo:"9994163", built:"Jan 2025", dwt:49782, engine:"MAN B&W (2025 newbuild)", scrubber:true, mainFuel:"HSFO", ballastSpeed:{max:13.00,eco:12.50}, ladenSpeed:{max:13.00,eco:12.50}, sizeClass:"MR", consumClass:"MR ECO"},
+  "PACIFIC PRIDE": {imo:"1083188", built:"Jun 2025", dwt:50600, engine:"MAN 6G50ME-C9.6-HPSCR + scrubber", scrubber:true, mainFuel:"HSFO", ballastSpeed:{max:14.5,eco:12.50}, ladenSpeed:{max:13.50,eco:11.50}, sizeClass:"MR", consumClass:"MR ECO"},
+  "PACIFIC PIONEER": {imo:"1046178", built:"Aug 2025", dwt:49998, engine:"MAN 6S50ME-C9.7-HPSCR + scrubber", scrubber:true, mainFuel:"HSFO", ballastSpeed:{max:15.30,eco:12}, ladenSpeed:{max:15.30,eco:12}, sizeClass:"MR", consumClass:"MR ECO"},
+  "PACIFIC EXPLORER": {imo:"1061855", built:"Oct 2025", dwt:49998, engine:"MAN 6S50ME-C9.7-HPSCR + scrubber", scrubber:true, mainFuel:"HSFO", ballastSpeed:{max:15.30,eco:12}, ladenSpeed:{max:13.50,eco:12}, sizeClass:"MR", consumClass:"MR ECO"},
+  "PACIFIC SPIRIT": {imo:"1083190", built:"Jul 2025", dwt:50521, engine:"MAN 6G50ME-C9.6-HPSCR + scrubber (sister ship to Pacific Pride)", scrubber:true, mainFuel:"HSFO", ballastSpeed:{max:14.5,eco:12.50}, ladenSpeed:{max:13.50,eco:11.50}, sizeClass:"MR", consumClass:"MR ECO"},
+  "PACIFIC ADVENTURE": {imo:"9326938", built:"Sep 2008 (ex-Amelia)", dwt:46005, engine:"MAN B&W 6S50MC (mechanical, older gen.)", scrubber:"unknown", mainFuel:"VLSFO", ballastSpeed:{max:13.5,eco:13.0}, ladenSpeed:{max:13.0,eco:12.5}, sizeClass:"MR", consumClass:"MR OLD", hasRealCurve:true, curveIsOverestimate:true},
+  "PACIFIC HORIZON": {imo:"1062586", built:"Jan 2026", dwt:49995, engine:"MAN 6S50ME-C9.7-HPSCR + scrubber", scrubber:true, mainFuel:"HSFO", ballastSpeed:{max:15.30,eco:12}, ladenSpeed:{max:15.30,eco:12}, sizeClass:"MR", consumClass:"MR ECO", hasRealCurve:true},
+  "PACIFIC INFINITY": {imo:"1062627", built:"May 2026", dwt:49998, engine:"MAN 6S50ME-C9.7-HPSCR + scrubber", scrubber:true, mainFuel:"HSFO", ballastSpeed:{max:16.0,eco:11.0}, ladenSpeed:{max:15.5,eco:10.5}, sizeClass:"MR", consumClass:"MR ECO", hasRealCurve:true}
+};
+// RIGEL/PIONEER/EXPLORER/SPIRIT/HORIZON/INFINITY get hasRealCurve too — added just below.
+["RIGEL","PACIFIC PRIDE","PACIFIC PIONEER","PACIFIC EXPLORER","PACIFIC SPIRIT"].forEach(k=>{ if(VESSEL_REF[k]) VESSEL_REF[k].hasRealCurve = true; });
+
+// Real speed-indexed consumption curve (Main Engine + Aux Engine, tonnes/day), confirmed by
+// Captain Roy as applicable to all Pacific-fleet vessels and Rigel EXCEPT Pacific Adventure
+// (which runs somewhat lower and is still pending its own figures). Confirmed same across all
+// fuel types (the physical burn rate doesn't change by fuel grade), with HSFO as the fuel these
+// vessels actually run on (scrubber-fitted, see mainFuel above). Values are [speed_kn, total_tpd].
+const STANDARD_MR_CURVE = {
+  ballast: [[12,16],[12.5,18.6],[13,20.8],[13.5,22.7],[14,24.3],[14.5,26.7]],
+  laden:   [[11,17.8],[11.5,19.6],[12,20.6],[12.5,21.9],[13,22.7],[13.5,25.8],[14,28.5]],
+  portLoading: 6, portDischargingFO: 11.4, portDischargingDO: 3.8, idleAux: 3, idleBoiler: 2.5
+};
+// Linear interpolation between the two nearest defined speed points; clamps to the nearest end
+// point outside the table's range rather than extrapolating (safer than guessing beyond real data).
+function interpolateCurve(points, speed){
+  if(!points || points.length===0) return null;
+  if(speed <= points[0][0]) return points[0][1];
+  if(speed >= points[points.length-1][0]) return points[points.length-1][1];
+  for(let i=0;i<points.length-1;i++){
+    const [s1,c1] = points[i], [s2,c2] = points[i+1];
+    if(speed>=s1 && speed<=s2) return c1 + (speed-s1)/(s2-s1)*(c2-c1);
+  }
+  return points[points.length-1][1];
+}
 const FLAT_RATE_REF = {"dar_es_salaam__jubail":11.08,"durban__jubail":14.88,"durban__new_mangalore":13.65,"new_mangalore__singapore":9.03,"paradip__singapore":7.52,"ningbo__singapore":9.17,"singapore__sydney":17.29,"brisbane__singapore":15.07,"melbourne__singapore":15.59};
 
 
@@ -8949,10 +9022,10 @@ function pairKey(a,b){ return [a,b].sort().join('__'); }
 let drawing = null; // {legIndex, src, dst, points:[], markers:[], previewLine}
 
 let rotation = [
-  {port:"port_klang", callType:"Load", cargoPct:50, days:2, portDuty:0},
-  {port:"dumai", callType:"Load", cargoPct:50, days:1.5, portDuty:0},
-  {port:"aden", callType:"Discharge", cargoPct:50, days:2, portDuty:0},
-  {port:"djibouti", callType:"Discharge", cargoPct:50, days:1.5, portDuty:0},
+  {port:"port_klang", callType:"Load", cargoPct:100, days:2, portDuty:0},
+  {port:"dumai", callType:"Load", cargoPct:100, days:1.5, portDuty:0},
+  {port:"aden", callType:"Discharge", cargoPct:100, days:2, portDuty:0},
+  {port:"djibouti", callType:"Discharge", cargoPct:100, days:1.5, portDuty:0},
 ];
 let startingPointPort = null; // resolved port_id of the fixed Starting Point row, or null if unset
 // Keyed by rotation index i (meaning: "after rotation[i], the vessel is empty — a Next Starting
@@ -8969,9 +9042,8 @@ function detectVoyageBoundaries(rot){
   let cargoRunning = 0, sawCargo = false;
   const boundaries = [];
   rot.forEach((call,i)=>{
-    const pct = (call.cargoPct||0)/100;
-    if(call.callType==='Load') cargoRunning = Math.min(1, cargoRunning + pct);
-    if(call.callType==='Discharge') cargoRunning = Math.max(0, cargoRunning - pct);
+    if(call.callType==='Load') cargoRunning = 1;
+    if(call.callType==='Discharge') cargoRunning = 0;
     if(cargoRunning>0) sawCargo = true;
     if(sawCargo && cargoRunning<0.005){
       boundaries.push(i);
@@ -8993,7 +9065,6 @@ function renderRotation(){
     <td style="font-family:'SFMono-Regular',Consolas,monospace; color:var(--text-mute);">—</td>
     <td><input type="text" id="startingPointInput" list="allPortsDatalist" value="${startName}" autocomplete="off" placeholder="Where is the vessel now? (optional)"></td>
     <td><span class="badge boundary">Starting Point</span></td>
-    <td style="color:var(--text-mute); text-align:center;">—</td>
     <td style="color:var(--text-mute); text-align:center;">—</td>
     <td style="color:var(--text-mute); text-align:center;">—</td>
     <td class="rowbtns">${startName ? `<button class="iconbtn danger" id="clearStartingPoint" title="Clear">✕</button>` : ''}</td>`;
@@ -9019,9 +9090,6 @@ function renderRotation(){
             <option value="Bunkering" ${call.callType==='Bunkering'?'selected':''}>Bunkering</option>
             <option value="OwnersMatter" ${call.callType==='OwnersMatter'?'selected':''}>Owners Matter</option>
           </select></td>
-      <td>${(call.callType==='Load'||call.callType==='Discharge')
-            ? `<input type="number" data-i="${i}" class="cargoPctInp" value="${call.cargoPct!==undefined?call.cargoPct:100}" step="5" min="0" max="100" title="% of total cargo loaded or discharged at this call — matters when loading/discharging across more than one port">`
-            : `<span style="color:var(--text-mute); display:block; text-align:center;" title="Not a cargo operation — the vessel keeps whatever it was already carrying (or empty) through this stop">—</span>`}</td>
       <td><input type="number" data-i="${i}" class="daysInp" value="${call.days}" step="0.5" min="0"></td>
       <td><input type="number" data-i="${i}" class="portDutyInp" value="${call.portDuty||0}" step="100" min="0"></td>
       <td class="rowbtns">
@@ -9035,7 +9103,7 @@ function renderRotation(){
       const ov = nextStartOverrides[i];
       if(ov && ov.removed){
         const restoreTr = document.createElement('tr');
-        restoreTr.innerHTML = `<td colspan="7" style="text-align:center; padding:5px 0;">
+        restoreTr.innerHTML = `<td colspan="6" style="text-align:center; padding:5px 0;">
           <button class="addrow restoreBoundaryBtn" data-i="${i}" style="font-size:11px; padding:4px 10px;">+ Add Next Starting Point after ${currentName}</button>
         </td>`;
         tbody.appendChild(restoreTr);
@@ -9046,7 +9114,7 @@ function renderRotation(){
         const markerTr = document.createElement('tr');
         markerTr.style.background = 'rgba(47,143,138,0.06)';
         markerTr.innerHTML = `
-          <td colspan="7" style="text-align:center; padding:4px 0; border-top:2px dashed var(--strait); font-family:'SFMono-Regular',Consolas,monospace; font-size:10.5px; color:var(--strait); letter-spacing:0.4px;">⚓ Fully discharged at ${currentName} — voyage complete here</td>`;
+          <td colspan="6" style="text-align:center; padding:4px 0; border-top:2px dashed var(--strait); font-family:'SFMono-Regular',Consolas,monospace; font-size:10.5px; color:var(--strait); letter-spacing:0.4px;">⚓ Fully discharged at ${currentName} — voyage complete here</td>`;
         tbody.appendChild(markerTr);
         const nextTr = document.createElement('tr');
         nextTr.style.background = 'rgba(47,143,138,0.06)';
@@ -9054,7 +9122,6 @@ function renderRotation(){
           <td style="font-family:'SFMono-Regular',Consolas,monospace; color:var(--text-mute);">—</td>
           <td><input type="text" class="nextStartInput" data-bi="${i}" list="allPortsDatalist" value="${effectiveName}" autocomplete="off" placeholder="Repositioning from here (optional)"></td>
           <td><span class="badge boundary">Next Starting Point</span></td>
-          <td style="color:var(--text-mute); text-align:center;">—</td>
           <td style="color:var(--text-mute); text-align:center;">—</td>
           <td style="color:var(--text-mute); text-align:center;">—</td>
           <td class="rowbtns">
@@ -9152,7 +9219,6 @@ function renderRotation(){
   });
 
   tbody.querySelectorAll('.typeSel').forEach(el=>el.onchange = e=>{ rotation[+e.target.dataset.i].callType = e.target.value; applyFreightSuggestion(); renderRotation(); runCalc(); });
-  tbody.querySelectorAll('.cargoPctInp').forEach(el=>el.onchange = e=>{ rotation[+e.target.dataset.i].cargoPct = parseFloat(e.target.value)||0; renderRotation(); runCalc(); });
   tbody.querySelectorAll('.daysInp').forEach(el=>el.onchange = e=>{ rotation[+e.target.dataset.i].days = parseFloat(e.target.value)||0; });
   tbody.querySelectorAll('.portDutyInp').forEach(el=>el.onchange = e=>{ rotation[+e.target.dataset.i].portDuty = parseFloat(e.target.value)||0; });
   tbody.querySelectorAll('.moveUp').forEach(el=>el.onclick = e=>{
@@ -9332,37 +9398,31 @@ function runCalc(){
 
   // Build the full call sequence: fixed Starting Point, the rotation (with a repositioning leg
   // inserted at every voyage boundary that has been given a real, different destination), then
-  // cargo fraction is tracked straight through. The vessel starts empty (0% cargo aboard). Each
-  // Load call adds its Cargo % of the total parcel; each Discharge call removes its Cargo % — so
-  // with two load ports the leg after the first carries only that first parcel's share, not a
-  // flat "laden" rate, and with two discharge ports the leg after a partial discharge still
-  // reflects whatever cargo remains aboard.
+  // cargo fraction is tracked straight through. The vessel starts empty; each Load fills it,
+  // each Discharge empties it.
   const voyageBoundaries = detectVoyageBoundaries(rotation);
   let callSequence = [];
   rotation.forEach((c,i)=>{
-    callSequence.push({port:c.port, callType:c.callType, cargoPct:c.cargoPct});
+    callSequence.push({port:c.port, callType:c.callType});
     if(voyageBoundaries.includes(i)){
       const ov = nextStartOverrides[i];
       if(!(ov && ov.removed)){
         const effectivePort = (ov && ov.port) ? ov.port : c.port;
         if(effectivePort !== c.port){
-          callSequence.push({port:effectivePort, callType:'NextStart', cargoPct:0});
+          callSequence.push({port:effectivePort, callType:'NextStart'});
         }
       }
     }
   });
   if(startingPointPort && startingPointPort !== callSequence[0].port){
-    callSequence = [{port:startingPointPort, callType:'Start', cargoPct:0}].concat(callSequence);
+    callSequence = [{port:startingPointPort, callType:'Start'}].concat(callSequence);
   }
   let cargoFraction = 0;
   const fractionAtDeparture = callSequence.map(c=>{
-    const pct = (c.cargoPct||0)/100;
-    if(c.callType==='Load') cargoFraction = Math.min(1, cargoFraction + pct);
-    if(c.callType==='Discharge') cargoFraction = Math.max(0, cargoFraction - pct);
+    if(c.callType==='Load') cargoFraction = 1;
+    if(c.callType==='Discharge') cargoFraction = 0;
     return cargoFraction;
   });
-  const loadPctTotal = rotation.filter(c=>c.callType==='Load').reduce((s,c)=>s+(c.cargoPct||0),0);
-  const dischPctTotal = rotation.filter(c=>c.callType==='Discharge').reduce((s,c)=>s+(c.cargoPct||0),0);
 
   for(let i=0;i<callSequence.length-1;i++){
     const src = callSequence[i].port, dst = callSequence[i+1].port;
@@ -9416,9 +9476,12 @@ function runCalc(){
   const seaConsLaden = { HSFO: parseFloat(document.getElementById('cs_hsfo_laden').value)||0,
                      VLSFO: parseFloat(document.getElementById('cs_vlsfo_laden').value)||0,
                      LSMGO: parseFloat(document.getElementById('cs_lsmgo_laden').value)||0 };
-  const portCons = { HSFO: parseFloat(document.getElementById('cp_hsfo').value)||0,
-                      VLSFO: parseFloat(document.getElementById('cp_vlsfo').value)||0,
-                      LSMGO: parseFloat(document.getElementById('cp_lsmgo').value)||0 };
+  const portConsLoad = { HSFO: parseFloat(document.getElementById('cp_hsfo_load').value)||0,
+                      VLSFO: parseFloat(document.getElementById('cp_vlsfo_load').value)||0,
+                      LSMGO: parseFloat(document.getElementById('cp_lsmgo_load').value)||0 };
+  const portConsDisch = { HSFO: parseFloat(document.getElementById('cp_hsfo_disch').value)||0,
+                      VLSFO: parseFloat(document.getElementById('cp_vlsfo_disch').value)||0,
+                      LSMGO: parseFloat(document.getElementById('cp_lsmgo_disch').value)||0 };
 
   const seaDays = legs.reduce((s,l)=>s+l.nm/speed/24, 0);
   const portDays = rotation.reduce((s,c)=>s+(c.days||0),0);
@@ -9438,7 +9501,16 @@ function runCalc(){
       fuelCostByType[f] += days*rate*price[f];
     });
   });
-  ["HSFO","VLSFO","LSMGO"].forEach(f=>{ fuelMtByType[f] += portDays*portCons[f]; fuelCostByType[f] += portDays*portCons[f]*price[f]; });
+  // Each port call uses its own Loading or Discharging consumption rate — not one blended figure.
+  // Bunkering / Owners Matter calls aren't cargo operations, so default to the Loading rate (lower
+  // activity than active discharge, a reasonable proxy in the absence of dedicated figures).
+  rotation.forEach(call=>{
+    const rate = call.callType === 'Discharge' ? portConsDisch : portConsLoad;
+    ["HSFO","VLSFO","LSMGO"].forEach(f=>{
+      fuelMtByType[f] += (call.days||0)*rate[f];
+      fuelCostByType[f] += (call.days||0)*rate[f]*price[f];
+    });
+  });
   let bunkerTotal = fuelCostByType.HSFO + fuelCostByType.VLSFO + fuelCostByType.LSMGO;
   // Port Duty = GT x rate (USD/GT/day) x days spent, applied per port call then summed
   // Port Duty is entered manually per port call (see the rotation table) — just sum it here
@@ -9450,7 +9522,14 @@ function runCalc(){
 
   const freightBasis = document.getElementById('freight_basis').value;
   const freightValue = parseFloat(document.getElementById('freight_value').value)||0;
-  const freightRevenue = freightBasis === 'permt' ? freightValue*cargoTonnage : freightValue;
+  const wsPoints = parseFloat(document.getElementById('ws_points').value)||0;
+  const wsFlatRate = parseFloat(document.getElementById('ws_flatrate').value)||0;
+  let freightRevenueGross;
+  if(freightBasis === 'permt') freightRevenueGross = freightValue*cargoTonnage;
+  else if(freightBasis === 'worldscale') freightRevenueGross = (wsPoints/100)*wsFlatRate*cargoTonnage;
+  else freightRevenueGross = freightValue;
+  const brokerCommissionPct = parseFloat(document.getElementById('broker_commission').value)||0;
+  const freightRevenue = freightRevenueGross * (1 - brokerCommissionPct/100);
   const voyageProfit = freightRevenue - totalCost;
   const tce = totalDays>0 ? (voyageProfit + hireCost)/totalDays : null;
 
@@ -9500,15 +9579,13 @@ function runCalc(){
   let portHtml = rotation.map((c,i)=>`<tr><td><span class="badge ${callTypeBadgeClass[c.callType]||'disch'}">${callTypeLabel[c.callType]||c.callType}</span> ${NODES[c.port].name}</td><td class="num">${fmt(c.days,2)}</td><td class="num">${money(portDutyByCall[i])}</td></tr>`).join('');
 
   resultsArea.innerHTML = `
-    ${(Math.abs(loadPctTotal-100)>0.5 || Math.abs(dischPctTotal-100)>0.5) ? `<div class="note" style="background:#fbeee9; border:1px solid var(--disch); color:var(--disch); padding:8px 12px; border-radius:6px; margin-bottom:12px;">
-      ${Math.abs(loadPctTotal-100)>0.5 ? `Load Cargo % adds up to ${fmt(loadPctTotal,0)}%, not 100%. ` : ''}${Math.abs(dischPctTotal-100)>0.5 ? `Discharge Cargo % adds up to ${fmt(dischPctTotal,0)}%, not 100%.` : ''} Check the Cargo % column — sailing consumption is calculated from these figures.
-    </div>` : ''}
     <div class="stat-row">
       <div class="stat"><div class="n">${fmt(totalNM)}</div><div class="l">Total NM</div></div>
       <div class="stat"><div class="n">${fmt(totalDays,1)}</div><div class="l">Total Voyage Days</div></div>
       <div class="stat hero"><div class="n">${money(totalCost)}</div><div class="l">Total Voyage Cost</div></div>
       <div class="stat"><div class="n">${money(totalCost/totalDays)}</div><div class="l">Cost / Day</div></div>
       <div class="stat"><div class="n">${costPerTonne!==null ? '$'+fmt(costPerTonne,2) : '—'}</div><div class="l">Cost / Tonne (Cargo)</div></div>
+      <div class="stat"><div class="n">${money(freightRevenue)}</div><div class="l">Freight Revenue (net of commission)</div></div>
       <div class="stat hero" style="${voyageProfit<0?'color:#a5342f;':''}"><div class="n">${money(voyageProfit)}</div><div class="l">Voyage Profit</div></div>
       <div class="stat" style="${tce!==null && tce<0?'color:#a5342f;':''}"><div class="n">${tce!==null ? money(tce) : '—'}</div><div class="l">TCE (USD/day)</div></div>
     </div>
@@ -9567,19 +9644,27 @@ function runCalc(){
 }
 
 document.getElementById('calc').onclick = runCalc;
-document.getElementById('freight_basis').addEventListener('change', function(){
+function updateFreightBasisUI(){
+  const basis = document.getElementById('freight_basis').value;
   document.getElementById('freight_value_label').textContent =
-    this.value === 'permt' ? 'Freight Rate (USD/mt)' : 'Freight Amount (USD)';
-});
-
-// Vessel-class key used against PORT_COST_REF (its columns are MR/LR1/LR2/AFRA/SUEZ/VLCC —
-// coarser than the 10 consumption classes, so several vessel_type options share one cost key)
-function portCostKeyFor(vesselType){
-  if(vesselType.startsWith('MR')) return 'MR';
-  if(vesselType.startsWith('SUEZ')) return 'SUEZ';
-  return vesselType; // LR1, LR2, AFRA, VLCC match directly
+    basis === 'permt' ? 'Freight Rate (USD/mt)' : 'Freight Amount (USD)';
+  document.getElementById('freight_value_wrap').style.display = basis === 'worldscale' ? 'none' : '';
+  document.getElementById('ws_points_wrap').style.display = basis === 'worldscale' ? '' : 'none';
+  document.getElementById('ws_flatrate_wrap').style.display = basis === 'worldscale' ? '' : 'none';
 }
-// Sets rotation[idx].portDuty to the reference suggestion, if a vessel type is chosen and a
+document.getElementById('freight_basis').addEventListener('change', function(){
+  updateFreightBasisUI();
+  runCalc();
+});
+updateFreightBasisUI();
+
+// Maps a selected vessel to its PORT_COST_REF bracket (MR/LR1/LR2/AFRA/SUEZ/VLCC) via VESSEL_REF's
+// sizeClass — all 7 fleet vessels with a Q88 on file are confirmed MR-size (46,000-50,600 DWT).
+function portCostKeyFor(vesselName){
+  const ref = VESSEL_REF[vesselName];
+  return ref ? ref.sizeClass : vesselName;
+}
+// Sets rotation[idx].portDuty to the reference suggestion, if a vessel is chosen and a
 // match exists for that port — otherwise leaves whatever is already there untouched. Always a
 // plain number in a normal input afterward: editing it is no different from typing it by hand.
 function suggestPortDutyForRow(idx){
@@ -9599,6 +9684,7 @@ function applyPortDutySuggestions(){
 // completely normal editable field afterward.
 function applyFreightSuggestion(){
   const note = document.getElementById('freight_suggest_note');
+  const wsNote = document.getElementById('ws_flatrate_note');
   const loadCall = rotation.find(c=>c.callType==='Load');
   const dischCalls = rotation.filter(c=>c.callType==='Discharge');
   if(!loadCall || dischCalls.length===0 || loadCall.port===dischCalls[dischCalls.length-1].port){
@@ -9612,23 +9698,85 @@ function applyFreightSuggestion(){
     note.textContent = 'No market rate on file for ' + NODES[loadCall.port].name + ' \u2194 ' + NODES[dischCall.port].name + ' — enter manually.';
     return;
   }
-  document.getElementById('freight_basis').value = 'permt';
-  document.getElementById('freight_value_label').textContent = 'Freight Rate (USD/mt)';
-  document.getElementById('freight_value').value = rate;
-  note.textContent = 'Suggested from on-file market rate for this pair — edit freely.';
+  document.getElementById('freight_basis').value = 'worldscale';
+  updateFreightBasisUI();
+  document.getElementById('ws_flatrate').value = rate;
+  note.textContent = '';
+  wsNote.textContent = 'Flat rate suggested from on-file market data for this pair (WS100 basis) — edit freely, and set the actual WS points quoted.';
+}
+function applyVesselConsumption(){
+  const vref = VESSEL_REF[document.getElementById('vessel_type').value];
+  const speed = parseFloat(document.getElementById('speed').value)||12;
+  if(!vref) return;
+  if(vref.hasRealCurve){
+    // Real vessel-specific figures (Captain Roy, confirmed applicable to this vessel), interpolated
+    // at the current voyage Speed — not a generic class average. Pacific Adventure is flagged
+    // curveIsOverestimate:true and uses this same curve as a deliberate conservative placeholder
+    // pending its own confirmed figures (Captain Roy: it runs lower than the rest of the fleet).
+    const ballastTotal = interpolateCurve(STANDARD_MR_CURVE.ballast, speed);
+    const ladenTotal = interpolateCurve(STANDARD_MR_CURVE.laden, speed);
+    if(vref.mainFuel === 'HSFO'){
+      document.getElementById('cs_hsfo_ballast').value = Math.round(ballastTotal*10)/10;
+      document.getElementById('cs_hsfo_laden').value = Math.round(ladenTotal*10)/10;
+      document.getElementById('cp_hsfo_load').value = STANDARD_MR_CURVE.portLoading;
+      document.getElementById('cp_hsfo_disch').value = STANDARD_MR_CURVE.portDischargingFO;
+      document.getElementById('cs_vlsfo_ballast').value = 0;
+      document.getElementById('cs_vlsfo_laden').value = 0;
+      document.getElementById('cp_vlsfo_load').value = 0;
+      document.getElementById('cp_vlsfo_disch').value = 0;
+    } else {
+      document.getElementById('cs_vlsfo_ballast').value = Math.round(ballastTotal*10)/10;
+      document.getElementById('cs_vlsfo_laden').value = Math.round(ladenTotal*10)/10;
+      document.getElementById('cp_vlsfo_load').value = STANDARD_MR_CURVE.portLoading;
+      document.getElementById('cp_vlsfo_disch').value = STANDARD_MR_CURVE.portDischargingFO;
+      document.getElementById('cs_hsfo_ballast').value = 0;
+      document.getElementById('cs_hsfo_laden').value = 0;
+      document.getElementById('cp_hsfo_load').value = 0;
+      document.getElementById('cp_hsfo_disch').value = 0;
+    }
+    // Captain Roy confirmed main + aux run on one single fuel while SAILING (already summed into
+    // the totals above) — so sailing LSMGO is zeroed. In port, though, the Discharging figure has
+    // a genuine separate DO (diesel oil) component for the cargo pump engine — that's real,
+    // documented consumption distinct from the main fuel, so it goes into LSMGO Discharging rather
+    // than being dropped.
+    document.getElementById('cs_lsmgo_ballast').value = 0;
+    document.getElementById('cs_lsmgo_laden').value = 0;
+    document.getElementById('cp_lsmgo_load').value = 0;
+    document.getElementById('cp_lsmgo_disch').value = STANDARD_MR_CURVE.portDischargingDO;
+  } else if(!vref.consumClass){
+    // No data at all for this vessel (e.g. no Q88 on file yet) — leave existing field values as-is.
+  } else {
+    const cref = CONSUMPTION_REF[vref.consumClass];
+    // Populate whichever fuel this vessel actually burns (per its own Q88), and zero the other —
+    // scrubber-fitted vessels run cheaper high-sulphur HSFO legally; a vessel with no scrubber
+    // confirmed must run compliant low-sulphur VLSFO instead.
+    if(vref.mainFuel === 'HSFO'){
+      document.getElementById('cs_hsfo_ballast').value = cref.ballast||0;
+      document.getElementById('cs_hsfo_laden').value = cref.laden||0;
+      document.getElementById('cp_hsfo_load').value = cref.load||0;
+      document.getElementById('cp_hsfo_disch').value = cref.disch||0;
+      document.getElementById('cs_vlsfo_ballast').value = 0;
+      document.getElementById('cs_vlsfo_laden').value = 0;
+      document.getElementById('cp_vlsfo_load').value = 0;
+      document.getElementById('cp_vlsfo_disch').value = 0;
+    } else {
+      document.getElementById('cs_vlsfo_ballast').value = cref.ballast||0;
+      document.getElementById('cs_vlsfo_laden').value = cref.laden||0;
+      document.getElementById('cp_vlsfo_load').value = cref.load||0;
+      document.getElementById('cp_vlsfo_disch').value = cref.disch||0;
+      document.getElementById('cs_hsfo_ballast').value = 0;
+      document.getElementById('cs_hsfo_laden').value = 0;
+      document.getElementById('cp_hsfo_load').value = 0;
+      document.getElementById('cp_hsfo_disch').value = 0;
+    }
+  }
 }
 document.getElementById('vessel_type').addEventListener('change', function(){
-  const ref = CONSUMPTION_REF[this.value];
-  if(ref){
-    // pre-fill as normal editable values, not locked — now precise per ballast/laden, no averaging needed
-    document.getElementById('cs_vlsfo_ballast').value = ref.ballast||0;
-    document.getElementById('cs_vlsfo_laden').value = ref.laden||0;
-    const port = ((ref.load||0) + (ref.disch||0)) / 2;
-    document.getElementById('cp_vlsfo').value = Math.round(port*10)/10;
-  }
+  applyVesselConsumption();
   applyPortDutySuggestions();
   applyFreightSuggestion();
 });
+document.getElementById('speed').addEventListener('change', applyVesselConsumption);
 
 // Populate the shared datalist used by the Starting Point / Next Starting Point row pickers
 (function(){
@@ -9642,6 +9790,90 @@ document.getElementById('vessel_type').addEventListener('change', function(){
 
 applyFreightSuggestion();
 runCalc();
+
+// ---------- Report export (PDF via print, or PNG image) ----------
+function buildReportMeta(){
+  const vessel = document.getElementById('vessel_type').value;
+  const vesselLabel = vessel ? (vessel.charAt(0)+vessel.slice(1).toLowerCase()).replace(/_/g,' ') : 'Vessel not selected';
+  const portNames = rotation.map(c=>NODES[c.port].name.split(',')[0]).join(' → ');
+  const now = new Date();
+  return vesselLabel + ' &nbsp;|&nbsp; ' + portNames + ' &nbsp;|&nbsp; Generated ' + now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+}
+document.getElementById('downloadPdfBtn').onclick = ()=>{
+  if(!document.querySelector('#resultsArea .stat')){ alert('Click "Calculate Voyage" first, then download the report.'); return; }
+  document.getElementById('printReportMeta').innerHTML = buildReportMeta();
+  window.print();
+};
+// Self-contained image export: draws directly from the already-calculated stat cards and tables
+// onto a <canvas>, with no external library and no network dependency — this can't fail due to a
+// CDN being blocked or unreachable, which a library-based screenshot approach depends on.
+document.getElementById('downloadImgBtn').onclick = ()=>{
+  const stats = document.querySelectorAll('#resultsArea .stat');
+  if(stats.length===0){ alert('Click "Calculate Voyage" first, then download the report.'); return; }
+  try{
+    const W = 900, PAD = 36;
+    const stat = document.querySelectorAll('#resultsArea .stat');
+    const breakdownTables = document.querySelectorAll('#resultsArea table.breakdown');
+    const legRows = breakdownTables[0] ? breakdownTables[0].querySelectorAll('tbody tr') : [];
+    const portRows = breakdownTables[1] ? breakdownTables[1].querySelectorAll('tbody tr') : [];
+    const costRows = breakdownTables[2] ? breakdownTables[2].querySelectorAll('tbody tr') : [];
+    const lineH = 26;
+    const statRows = Math.ceil(stat.length/2);
+    let estH = 210 + statRows*36 + 40 + (legRows.length+2)*lineH + 40 + (portRows.length+2)*lineH + 40 + (costRows.length+2)*lineH + 60;
+    const canvas = document.createElement('canvas');
+    canvas.width = W*2; canvas.height = estH*2;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(2,2);
+    ctx.fillStyle = '#f4ecd8'; ctx.fillRect(0,0,W,estH);
+    let y = PAD;
+    ctx.fillStyle = '#20242a'; ctx.font = 'bold 22px Georgia, serif';
+    ctx.fillText('Voyage Cost Estimate', PAD, y); y += 22;
+    ctx.strokeStyle = '#b08d4f'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(PAD,y); ctx.lineTo(W-PAD,y); ctx.stroke(); y += 20;
+    ctx.font = '12px Arial'; ctx.fillStyle = '#5b6570';
+    const metaText = buildReportMeta().replace(/&nbsp;/g,' ').replace(/<[^>]+>/g,'');
+    ctx.fillText(metaText, PAD, y); y += 34;
+    // stat cards, two per row
+    ctx.textBaseline = 'alphabetic';
+    for(let i=0;i<stat.length;i+=2){
+      const rowY = y;
+      for(let j=0;j<2;j++){
+        const el = stat[i+j]; if(!el) continue;
+        const n = el.querySelector('.n').textContent, l = el.querySelector('.l').textContent;
+        const x = PAD + j*(W-2*PAD)/2;
+        ctx.fillStyle = '#20242a'; ctx.font = 'bold 19px Georgia, serif';
+        ctx.fillText(n, x, rowY);
+        ctx.fillStyle = '#5b6570'; ctx.font = '11px Arial';
+        ctx.fillText(l.toUpperCase(), x, rowY+16);
+      }
+      y = rowY + 36;
+    }
+    y += 14;
+    function drawTable(title, rows){
+      if(rows.length===0) return;
+      ctx.fillStyle = '#20242a'; ctx.font = 'bold 14px Georgia, serif';
+      ctx.fillText(title, PAD, y); y += 20;
+      ctx.strokeStyle = '#d8c9a3'; ctx.lineWidth = 1;
+      rows.forEach(tr=>{
+        const cells = [...tr.querySelectorAll('td')].map(td=>td.textContent.trim()).filter(t=>t);
+        if(cells.length===0) return;
+        ctx.fillStyle = '#20242a'; ctx.font = '12px Arial';
+        ctx.fillText(cells.join('   |   ').slice(0,110), PAD, y);
+        y += lineH;
+      });
+      y += 14;
+    }
+    drawTable('Sea Legs', legRows);
+    drawTable('Port Calls', portRows);
+    drawTable('Cost Breakdown', costRows);
+    const link = document.createElement('a');
+    link.download = 'voyage-cost-estimate-' + Date.now() + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch(err){
+    alert('Image export hit an error: ' + err.message + '. Try Download Report (PDF) instead.');
+  }
+};
 </script>
 </body>
 </html>
