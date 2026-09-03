@@ -9057,10 +9057,10 @@ function pairKey(a,b){ return [a,b].sort().join('__'); }
 let drawing = null; // {legIndex, src, dst, points:[], markers:[], previewLine}
 
 let rotation = [
-  {port:"port_klang", callType:"Load", cargoPct:100, days:2, portDuty:0},
-  {port:"dumai", callType:"Load", cargoPct:100, days:1.5, portDuty:0},
-  {port:"aden", callType:"Discharge", cargoPct:100, days:2, portDuty:0},
-  {port:"djibouti", callType:"Discharge", cargoPct:100, days:1.5, portDuty:0},
+  {port:"port_klang", callType:"Load", cargoPct:100, days:0, portDuty:0},
+  {port:"dumai", callType:"Load", cargoPct:100, days:0, portDuty:0},
+  {port:"aden", callType:"Discharge", cargoPct:100, days:0, portDuty:0},
+  {port:"djibouti", callType:"Discharge", cargoPct:100, days:0, portDuty:0},
 ];
 let startingPointPort = null; // resolved port_id of the fixed Starting Point row, or null if unset
 // Keyed by rotation index i (meaning: "after rotation[i], the vessel is empty — a Next Starting
@@ -9270,7 +9270,7 @@ function renderRotation(){
 }
 document.getElementById('addRow').onclick = ()=>{
   const last = rotation[rotation.length-1];
-  rotation.push({port:last.port, callType:"Discharge", cargoPct:0, days:2, portDuty:0});
+  rotation.push({port:last.port, callType:"Discharge", cargoPct:0, days:0, portDuty:0});
   renderRotation();
 };
 renderRotation();
