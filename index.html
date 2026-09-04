@@ -67,9 +67,13 @@
   .bmk{ display:block; margin-top:3px; font-family:'SFMono-Regular',Consolas,monospace; font-size:10.5px;
         color:var(--text-mute); letter-spacing:.02em; min-height:13px; }
   .bmk.stale{ color:#a5342f; }
-  .fuelhead{ grid-column:1/-1; font-family:'SFMono-Regular',Consolas,monospace; font-size:11px;
-             color:var(--strait); text-transform:uppercase; letter-spacing:.08em; margin-top:6px;
-             border-top:1px dashed var(--parchment-line); padding-top:10px; }
+  .fuelhead{ grid-column:1/-1; font-family:'SFMono-Regular',Consolas,monospace; font-size:13px;
+             font-weight:700; color:var(--strait); text-transform:uppercase; letter-spacing:.09em;
+             margin-top:16px; border-top:2px solid var(--strait); padding-top:11px; }
+  /* The qualifier after the em dash is context, not the heading itself — keep it legible
+     but clearly subordinate so the eye lands on the section name first. */
+  .fuelhead .sub{ font-weight:400; text-transform:none; letter-spacing:.02em;
+                  font-size:11px; color:var(--strait); }
 
   button#calc{ margin-top:18px; background:var(--ink); color:var(--parchment); border:none; border-radius:4px;
         padding:12px 26px; font-family:'SFMono-Regular',Consolas,monospace; font-size:13.5px;
@@ -215,7 +219,7 @@
       </div>
       <div class="field" id="spot_name_wrap"><label>Spot Vessel Name</label><input type="text" id="spot_vessel_name" placeholder="e.g. MT Ocean Glory"></div>
 
-      <div class="fuelhead">Singapore Benchmark (USD / mt) — as published</div>
+      <div class="fuelhead">Singapore Benchmark (USD / mt)<span class="sub"> — as published</span></div>
       <div class="field"><label>HSFO <span class="gradehint">IFO380, 3.5%S</span></label><input type="number" id="bm_hsfo" value="430" step="5"></div>
       <div class="field"><label>VLSFO <span class="gradehint">0.50%S</span></label><input type="number" id="bm_vlsfo" value="580" step="5"></div>
       <div class="field"><label>LSMGO <span class="gradehint">MGO / gasoil</span></label><input type="number" id="bm_lsmgo" value="750" step="5"></div>
@@ -229,37 +233,37 @@
         <span id="priceAge" style="font-size:11.5px; color:var(--text-mute); line-height:1.5;"></span>
       </div>
 
-      <div class="fuelhead">Premium / Discount (USD / mt) — your spread to the benchmark</div>
+      <div class="fuelhead">Premium / Discount (USD / mt)<span class="sub"> — your spread to the benchmark</span></div>
       <div class="field"><label>HSFO</label><input type="number" id="prem_hsfo" value="0" step="1"></div>
       <div class="field"><label>VLSFO</label><input type="number" id="prem_vlsfo" value="0" step="1"></div>
       <div class="field"><label>LSMGO</label><input type="number" id="prem_lsmgo" value="0" step="1"></div>
       <div class="field"></div>
 
-      <div class="fuelhead">Price Used in the Estimate (USD / mt) — benchmark + premium</div>
+      <div class="fuelhead">Price Used in the Estimate (USD / mt)<span class="sub"> — benchmark + premium</span></div>
       <div class="field"><label>HSFO</label><input type="number" id="p_hsfo" value="430" step="5" readonly class="computed"></div>
       <div class="field"><label>VLSFO</label><input type="number" id="p_vlsfo" value="580" step="5" readonly class="computed"></div>
       <div class="field"><label>LSMGO</label><input type="number" id="p_lsmgo" value="750" step="5" readonly class="computed"></div>
       <div class="field"></div>
 
-      <div class="fuelhead">Consumption While Sailing — Ballast (mt / day)</div>
+      <div class="fuelhead">Consumption While Sailing<span class="sub"> — Ballast (mt / day)</span></div>
       <div class="field"><label>HSFO</label><input type="number" id="cs_hsfo_ballast" value="0" step="0.5"></div>
       <div class="field"><label>VLSFO</label><input type="number" id="cs_vlsfo_ballast" value="20" step="0.5"></div>
       <div class="field"><label>LSMGO</label><input type="number" id="cs_lsmgo_ballast" value="0" step="0.5"></div>
       <div class="field"></div>
 
-      <div class="fuelhead">Consumption While Sailing — Laden (mt / day)</div>
+      <div class="fuelhead">Consumption While Sailing<span class="sub"> — Laden (mt / day)</span></div>
       <div class="field"><label>HSFO</label><input type="number" id="cs_hsfo_laden" value="0" step="0.5"></div>
       <div class="field"><label>VLSFO</label><input type="number" id="cs_vlsfo_laden" value="24" step="0.5"></div>
       <div class="field"><label>LSMGO</label><input type="number" id="cs_lsmgo_laden" value="0" step="0.5"></div>
       <div class="field"></div>
 
-      <div class="fuelhead">Consumption In Port — Loading (mt / day)</div>
+      <div class="fuelhead">Consumption In Port<span class="sub"> — Loading (mt / day)</span></div>
       <div class="field"><label>HSFO</label><input type="number" id="cp_hsfo_load" value="0" step="0.5"></div>
       <div class="field"><label>VLSFO</label><input type="number" id="cp_vlsfo_load" value="3" step="0.5"></div>
       <div class="field"><label>LSMGO</label><input type="number" id="cp_lsmgo_load" value="0" step="0.5"></div>
       <div class="field"></div>
 
-      <div class="fuelhead">Consumption In Port — Discharging (mt / day)</div>
+      <div class="fuelhead">Consumption In Port<span class="sub"> — Discharging (mt / day)</span></div>
       <div class="field"><label>HSFO</label><input type="number" id="cp_hsfo_disch" value="0" step="0.5"></div>
       <div class="field"><label>VLSFO</label><input type="number" id="cp_vlsfo_disch" value="3" step="0.5"></div>
       <div class="field"><label>LSMGO</label><input type="number" id="cp_lsmgo_disch" value="2" step="0.5"></div>
