@@ -59,6 +59,14 @@
                 text-transform:uppercase; letter-spacing:.06em; color:var(--text-mute); }
   .field input{ font-family:Georgia,serif; font-size:15px; padding:8px 10px; border:1px solid var(--parchment-line);
                 border-radius:4px; background:#fffdf8; color:var(--text-dark); }
+  input.computed{ background:var(--panel-2,#f1efe9); color:var(--text,#1c1a17); font-weight:600;
+                  cursor:default; }
+  input.computed:focus{ outline:none; }
+  .gradehint{ font-weight:400; font-size:9.5px; color:var(--text-mute); letter-spacing:.03em;
+              text-transform:none; margin-left:4px; }
+  .bmk{ display:block; margin-top:3px; font-family:'SFMono-Regular',Consolas,monospace; font-size:10.5px;
+        color:var(--text-mute); letter-spacing:.02em; min-height:13px; }
+  .bmk.stale{ color:#a5342f; }
   .fuelhead{ grid-column:1/-1; font-family:'SFMono-Regular',Consolas,monospace; font-size:11px;
              color:var(--strait); text-transform:uppercase; letter-spacing:.08em; margin-top:6px;
              border-top:1px dashed var(--parchment-line); padding-top:10px; }
@@ -207,10 +215,30 @@
       </div>
       <div class="field" id="spot_name_wrap"><label>Spot Vessel Name</label><input type="text" id="spot_vessel_name" placeholder="e.g. MT Ocean Glory"></div>
 
-      <div class="fuelhead">Bunker Price (USD / mt)</div>
-      <div class="field"><label>HSFO</label><input type="number" id="p_hsfo" value="430" step="5"></div>
-      <div class="field"><label>VLSFO</label><input type="number" id="p_vlsfo" value="580" step="5"></div>
-      <div class="field"><label>LSMGO</label><input type="number" id="p_lsmgo" value="750" step="5"></div>
+      <div class="fuelhead">Singapore Benchmark (USD / mt) — as published</div>
+      <div class="field"><label>HSFO <span class="gradehint">IFO380, 3.5%S</span></label><input type="number" id="bm_hsfo" value="430" step="5"></div>
+      <div class="field"><label>VLSFO <span class="gradehint">0.50%S</span></label><input type="number" id="bm_vlsfo" value="580" step="5"></div>
+      <div class="field"><label>LSMGO <span class="gradehint">MGO / gasoil</span></label><input type="number" id="bm_lsmgo" value="750" step="5"></div>
+      <div class="field">
+        <label>Prices as of</label>
+        <input type="date" id="priceDate">
+      </div>
+      <div class="field" style="grid-column:1/-1; display:block;">
+        <a href="https://shipandbunker.com/prices/apac/sea/sg-sin-singapore" target="_blank" rel="noopener"
+           class="addrow" style="display:inline-block; margin:0 10px 0 0; text-decoration:none;">Open Ship &amp; Bunker — Singapore &#8599;</a>
+        <span id="priceAge" style="font-size:11.5px; color:var(--text-mute); line-height:1.5;"></span>
+      </div>
+
+      <div class="fuelhead">Premium / Discount (USD / mt) — your spread to the benchmark</div>
+      <div class="field"><label>HSFO</label><input type="number" id="prem_hsfo" value="0" step="1"></div>
+      <div class="field"><label>VLSFO</label><input type="number" id="prem_vlsfo" value="0" step="1"></div>
+      <div class="field"><label>LSMGO</label><input type="number" id="prem_lsmgo" value="0" step="1"></div>
+      <div class="field"></div>
+
+      <div class="fuelhead">Price Used in the Estimate (USD / mt) — benchmark + premium</div>
+      <div class="field"><label>HSFO</label><input type="number" id="p_hsfo" value="430" step="5" readonly class="computed"></div>
+      <div class="field"><label>VLSFO</label><input type="number" id="p_vlsfo" value="580" step="5" readonly class="computed"></div>
+      <div class="field"><label>LSMGO</label><input type="number" id="p_lsmgo" value="750" step="5" readonly class="computed"></div>
       <div class="field"></div>
 
       <div class="fuelhead">Consumption While Sailing — Ballast (mt / day)</div>
@@ -9274,6 +9302,49 @@ document.getElementById('addRow').onclick = ()=>{
   renderRotation();
 };
 renderRotation();
+
+// ---------- Bunker prices: benchmark + premium ----------
+// The benchmark is typed in from a published source (Ship & Bunker publishes Singapore prices
+// free each business day). The premium is your own spread to it — barging, supplier margin,
+// stem size, contract terms — so the figure the estimate actually uses is benchmark + premium.
+// The price fields are read-only on purpose: editing them directly would silently break the
+// link to the benchmark, and you would not be able to see which number was stale.
+const FUELS = ['hsfo','vlsfo','lsmgo'];
+const priceDateEl = document.getElementById('priceDate');
+const priceAgeEl  = document.getElementById('priceAge');
+
+function todayISO(){
+  const d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+}
+
+function applyPremiums(){
+  FUELS.forEach(f=>{
+    const bm   = parseFloat(document.getElementById('bm_'+f).value)||0;
+    const prem = parseFloat(document.getElementById('prem_'+f).value)||0;
+    document.getElementById('p_'+f).value = (bm + prem).toFixed(2);
+  });
+}
+
+function refreshPriceAge(){
+  const v = priceDateEl.value;
+  if(!v){ priceAgeEl.textContent = 'Enter the benchmark prices, then set the date they were taken.'; priceAgeEl.style.color=''; return; }
+  const days = Math.floor((new Date(todayISO()) - new Date(v)) / 86400000);
+  if(days < 0){        priceAgeEl.textContent = 'That date is in the future — check it.'; priceAgeEl.style.color='#a5342f'; }
+  else if(days === 0){ priceAgeEl.textContent = 'Benchmark entered today.'; priceAgeEl.style.color=''; }
+  else if(days === 1){ priceAgeEl.textContent = 'Benchmark is 1 day old.'; priceAgeEl.style.color=''; }
+  else if(days <= 4){  priceAgeEl.textContent = `Benchmark is ${days} days old.`; priceAgeEl.style.color=''; }
+  else {               priceAgeEl.textContent = `Benchmark is ${days} days old — worth refreshing before you quote.`; priceAgeEl.style.color='#a5342f'; }
+}
+
+FUELS.forEach(f=>{
+  document.getElementById('bm_'+f).addEventListener('input', ()=>{ applyPremiums(); });
+  document.getElementById('bm_'+f).addEventListener('change', ()=>{ priceDateEl.value = todayISO(); refreshPriceAge(); });
+  document.getElementById('prem_'+f).addEventListener('input', applyPremiums);
+});
+priceDateEl.addEventListener('change', refreshPriceAge);
+applyPremiums();
+refreshPriceAge();
 
 // ---------- Map (nautical basemap, tailored for tracing sea routes) ----------
 const map = L.map('map', {scrollWheelZoom:true}).setView([15,60],3);
