@@ -111,6 +111,22 @@
                    text-transform:uppercase; padding:8px 14px; border-radius:4px; cursor:pointer; border:none; }
   .btn-start{ background:var(--ink); color:var(--parchment); }
   .btn-start:hover{ background:#173247; }
+  /* Download controls: these were faint outlined ghost buttons that read as secondary and were
+     easy to miss. The report is the point of the tool, so they are styled as real actions. */
+  #reportActions{ display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+        background:#fffdf8; border:1px solid var(--parchment-line); border-radius:6px;
+        padding:14px 16px; margin-bottom:16px; }
+  #reportActions .dlLabel{ font-family:Georgia,serif; font-size:14px; color:var(--text-dark);
+        margin-right:4px; }
+  .btn-dl{ font-family:Georgia,serif; font-size:14.5px; padding:11px 20px; border-radius:5px;
+        cursor:pointer; border:none; display:inline-flex; align-items:center; gap:8px;
+        transition:background .15s ease, box-shadow .15s ease; }
+  .btn-dl-primary{ background:var(--ink); color:var(--parchment); box-shadow:0 2px 5px rgba(0,0,0,.18); }
+  .btn-dl-primary:hover{ background:#173247; box-shadow:0 4px 10px rgba(0,0,0,.24); }
+  .btn-dl-second{ background:#fff; color:var(--ink); border:1.5px solid var(--brass); }
+  .btn-dl-second:hover{ background:#f4ecd8; }
+  .btn-dl:focus-visible{ outline:3px solid var(--brass); outline-offset:2px; }
+  #reportActions .dlHint{ font-size:12px; color:var(--text-mute); }
   .btn-ghost{ background:none; border:1px solid var(--text-mute); color:var(--text-mute); }
   .btn-ghost:hover{ background:#e9e0c8; }
   .btn-finish{ background:var(--load); color:#fff; }
@@ -158,7 +174,6 @@
         font-weight:700; font-size:10.5px; }
   .stat .n { font-size:17px !important; }
   .stat .l { font-size:8.5px !important; }
-  #printReportFooter { display:block !important; }
 }
 #printReportHeader { display:none; margin:0 0 16px 0; }
 #printReportHeader .rule { height:2.5px; background:var(--brass); margin:0 0 9px 0; }
@@ -170,8 +185,7 @@
 #printReportHeader .grid div span { display:block; font-size:8.4px; letter-spacing:.05em;
       color:#7b8894; margin-bottom:2px; }
 #printReportHeader .grid div b { font-family:Georgia,serif; font-size:11.5px; font-weight:600; color:#141a21; }
-#printReportFooter { display:none; margin-top:14px; padding-top:7px; border-top:.6px solid #dfd6c2;
-      font-size:8.4px; color:#7b8894; }
+
 </style>
 </head>
 <body>
@@ -336,10 +350,17 @@
   </div>
 
   <div class="panel">
-    <div id="reportActions" style="display:flex; gap:10px; margin-bottom:14px; align-items:center;">
-      <button class="btn-ghost" id="downloadPdfBtn">Download Report (PDF)</button>
-      <button class="btn-ghost" id="downloadImgBtn">Download Report (Image)</button>
-      <span style="font-size:11.5px; color:var(--text-mute);">PDF opens the print dialog &mdash; choose Save as PDF.</span>
+    <div id="reportActions">
+      <span class="dlLabel">Download this estimate</span>
+      <button class="btn-dl btn-dl-primary" id="downloadPdfBtn">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5v8.5m0 0L4.8 6.8M8 10l3.2-3.2M2 12v1.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        PDF
+      </button>
+      <button class="btn-dl btn-dl-second" id="downloadImgBtn">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/><circle cx="5.5" cy="6.5" r="1.2" fill="currentColor"/><path d="M2 11.5 5.8 8.2l2.4 2.1L11 7.6l3 3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Image
+      </button>
+      <span class="dlHint">PDF opens the print dialog &mdash; choose Save as PDF.</span>
     </div>
     <div id="printReportHeader">
       <div class="rule"></div>
@@ -348,7 +369,6 @@
       <div class="grid" id="printReportGrid"></div>
     </div>
     <div id="resultsArea"><div class="placeholder">Set up your rotation and variables, then hit Calculate Voyage.</div></div>
-    <div id="printReportFooter">Voyage Cost Estimator &mdash; Bulk Oil &amp; FMCG Trade Desk. Estimate only; figures are editable inputs and not a firm quotation.</div>
   </div>
 
   <p class="note">
@@ -10248,7 +10268,6 @@ document.getElementById('downloadImgBtn').onclick = ()=>{
 
     y = h - 26; rule(y-12, HAIR, .8);
     c.fillStyle=MUTE; c.font='10px Arial';
-    c.fillText('Voyage Cost Estimator \u2014 Bulk Oil & FMCG Trade Desk. Estimate only, not a firm quotation.', PAD, y);
     right(f.dateStr, W-PAD, y);
 
     const a=document.createElement('a');
