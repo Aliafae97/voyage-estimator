@@ -259,6 +259,16 @@
       <div class="field"><label>LSMGO</label><input type="number" id="cs_lsmgo_laden" value="0" step="0.5"></div>
       <div class="field"></div>
 
+      <div class="fuelhead">Cargo Heating<span class="sub"> &mdash; one lump for the whole voyage, not per day</span></div>
+      <div class="field"><label>Heating fuel (mt / voyage)</label><input type="number" id="heat_mt" value="200" step="10"></div>
+      <div class="field" style="grid-column:span 2; align-self:end;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="heat_on" style="width:auto; margin:0;">
+          <span>Include cargo heating in the calculation</span>
+        </label>
+      </div>
+      <div class="field"></div>
+
       <div class="fuelhead">Consumption In Port<span class="sub"> — Loading (mt / day)</span></div>
       <div class="field"><label>HSFO</label><input type="number" id="cp_hsfo_load" value="0" step="0.5"></div>
       <div class="field"><label>VLSFO</label><input type="number" id="cp_vlsfo_load" value="3" step="0.5"></div>
@@ -9775,6 +9785,17 @@ function runCalc(){
       fuelCostByType[f] += (call.days||0)*rate[f]*price[f];
     });
   });
+  // Cargo heating: a single lump of boiler fuel for the whole voyage, NOT a per-day rate, which is
+  // how the Budget Computation workbook treats it. Off by default because CPP is carried at ambient
+  // temperature and needs no heat — it is DPP, vegoils and FAME/biodiesel that do. Charged against
+  // whichever grade the vessel burns at sea, since that is what feeds the boiler.
+  const heatOn = document.getElementById('heat_on').checked;
+  const heatMt = heatOn ? (parseFloat(document.getElementById('heat_mt').value)||0) : 0;
+  const heatGrade = (seaConsLaden.HSFO>0 || seaConsBallast.HSFO>0) ? 'HSFO' : 'VLSFO';
+  if(heatMt>0){
+    fuelMtByType[heatGrade] += heatMt;
+    fuelCostByType[heatGrade] += heatMt*price[heatGrade];
+  }
   let bunkerTotal = fuelCostByType.HSFO + fuelCostByType.VLSFO + fuelCostByType.LSMGO;
   // Port Duty = GT x rate (USD/GT/day) x days spent, applied per port call then summed
   // Port Duty is entered manually per port call (see the rotation table) — just sum it here
@@ -9878,6 +9899,7 @@ function runCalc(){
             <tr><td>HSFO (${fmt(fuelMtByType.HSFO,1)} mt × ${money(price.HSFO)}/mt)</td><td class="num">${money(fuelCostByType.HSFO)}</td></tr>
             <tr><td>VLSFO (${fmt(fuelMtByType.VLSFO,1)} mt × ${money(price.VLSFO)}/mt)</td><td class="num">${money(fuelCostByType.VLSFO)}</td></tr>
             <tr><td>LSMGO (${fmt(fuelMtByType.LSMGO,1)} mt × ${money(price.LSMGO)}/mt)</td><td class="num">${money(fuelCostByType.LSMGO)}</td></tr>
+            ${heatMt>0 ? `<tr><td style="padding-left:14px; color:var(--text-mute);">&#8627; of which cargo heating (${fmt(heatMt,0)} mt ${heatGrade}, flat per voyage)</td><td class="num" style="color:var(--text-mute);">${money(heatMt*price[heatGrade])}</td></tr>` : ''}
             <tr><td>Port Duty (sum of amounts entered per port call)</td><td class="num">${money(portDutyTotal)}</td></tr>
             <tr><td>Other Costs</td><td class="num">${money(otherCosts)}</td></tr>
             <tr class="total"><td>TOTAL VOYAGE COST</td><td class="num">${money(totalCost)}</td></tr>
@@ -9908,6 +9930,12 @@ function runCalc(){
 }
 
 document.getElementById('calc').onclick = runCalc;
+// The heating toggle recalculates on the spot — a checkbox that appears to do nothing until the
+// Calculate button is pressed reads as broken.
+document.getElementById('heat_on').addEventListener('change', runCalc);
+document.getElementById('heat_mt').addEventListener('input', ()=>{
+  if(document.getElementById('heat_on').checked) runCalc();
+});
 function updateFreightBasisUI(){
   const basis = document.getElementById('freight_basis').value;
   document.getElementById('freight_value_label').textContent =
@@ -10061,6 +10089,13 @@ document.getElementById('speed').addEventListener('change', applyVesselConsumpti
   });
 })();
 
+// The dropdown defaults to the first option (GHS Vessels), but the consumption inputs carry their
+// own hardcoded HTML defaults — VLSFO figures that belong to no vessel. Until this ran on load, the
+// page opened showing GHS selected next to the wrong fuel grade and the wrong numbers, and you had
+// to switch away and back to correct it. Applying the selection at startup makes what is displayed
+// match what is selected.
+applyVesselConsumption();
+applyPortDutySuggestions();
 applyFreightSuggestion();
 runCalc();
 
