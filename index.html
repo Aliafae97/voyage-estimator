@@ -134,15 +134,44 @@
   .portSearchOpt:hover, .portSearchOpt.active{ background:#e9e0c8; }
   .portDutyInp{ width:100%; text-align:right; font-family:Georgia,serif; font-size:14px; padding:6px 8px;
         border:1px solid var(--parchment-line); border-radius:4px; background:#fffdf8; color:var(--text-dark); }
+@page { size:A4 portrait; margin:15mm 14mm 16mm 14mm; }
 @media print {
-  .no-print, .header-toolbar, #reportActions { display:none !important; }
-  body { background:#fff; }
-  .panel { box-shadow:none; border:none; padding:0; }
+  /* The report is a document that leaves the desk — strip the app around it. The tool's own
+     header, the methodology footnote and the working notes under each table are for the person
+     using the estimator, not for whoever receives the estimate. */
+  .no-print, .header-toolbar, #reportActions, header, .wrap > p.note,
+  #resultsArea .note, #resultsArea .applyOverride, #resultsArea .clearOverride,
+  #resultsArea .overrideInp { display:none !important; }
+  html, body { background:#fff !important; color:#141a21; }
+  .panel { box-shadow:none !important; border:none !important; padding:0 !important;
+           background:#fff !important; margin:0 !important; }
+  .wrap { max-width:none; padding:0; margin:0; }
   #printReportHeader { display:block !important; }
+  /* keep a table and its heading together, and repeat headers on a spill-over page */
+  table.breakdown { page-break-inside:auto; width:100%; border-collapse:collapse; }
+  table.breakdown thead { display:table-header-group; }
+  table.breakdown tr { page-break-inside:avoid; }
+  table.breakdown th { border-bottom:1.2px solid #8a6d33; font-size:9.5px; letter-spacing:.04em;
+        text-transform:none; color:#5b4a26; padding:5px 7px; }
+  table.breakdown td { border-bottom:.5px solid #dfd6c2; font-size:10px; padding:4.5px 7px; }
+  table.breakdown tr.total td { border-top:1.2px solid #8a6d33; border-bottom:none;
+        font-weight:700; font-size:10.5px; }
+  .stat .n { font-size:17px !important; }
+  .stat .l { font-size:8.5px !important; }
+  #printReportFooter { display:block !important; }
 }
-#printReportHeader { display:none; margin-bottom:14px; padding-bottom:10px; border-bottom:2px solid var(--brass); }
-#printReportHeader h1 { font-size:20px; margin:0 0 4px 0; }
-#printReportHeader .meta { font-size:12px; color:var(--text-mute); }
+#printReportHeader { display:none; margin:0 0 16px 0; }
+#printReportHeader .rule { height:2.5px; background:var(--brass); margin:0 0 9px 0; }
+#printReportHeader h1 { font-family:Georgia,serif; font-size:21px; line-height:1.15; margin:0;
+      letter-spacing:.01em; color:#141a21; }
+#printReportHeader .vessel { font-family:Georgia,serif; font-size:13px; color:#5b4a26; margin:2px 0 11px 0; }
+#printReportHeader .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px 18px;
+      border-top:.6px solid #dfd6c2; border-bottom:.6px solid #dfd6c2; padding:8px 0; }
+#printReportHeader .grid div span { display:block; font-size:8.4px; letter-spacing:.05em;
+      color:#7b8894; margin-bottom:2px; }
+#printReportHeader .grid div b { font-family:Georgia,serif; font-size:11.5px; font-weight:600; color:#141a21; }
+#printReportFooter { display:none; margin-top:14px; padding-top:7px; border-top:.6px solid #dfd6c2;
+      font-size:8.4px; color:#7b8894; }
 </style>
 </head>
 <body>
@@ -310,13 +339,16 @@
     <div id="reportActions" style="display:flex; gap:10px; margin-bottom:14px; align-items:center;">
       <button class="btn-ghost" id="downloadPdfBtn">Download Report (PDF)</button>
       <button class="btn-ghost" id="downloadImgBtn">Download Report (Image)</button>
-      <span style="font-size:11.5px; color:var(--text-mute);">PDF opens your browser's print dialog — choose "Save as PDF" as the destination.</span>
+      <span style="font-size:11.5px; color:var(--text-mute);">PDF opens the print dialog &mdash; choose Save as PDF.</span>
     </div>
     <div id="printReportHeader">
+      <div class="rule"></div>
       <h1>Voyage Cost Estimate</h1>
-      <div class="meta" id="printReportMeta"></div>
+      <div class="vessel" id="printReportVessel"></div>
+      <div class="grid" id="printReportGrid"></div>
     </div>
     <div id="resultsArea"><div class="placeholder">Set up your rotation and variables, then hit Calculate Voyage.</div></div>
+    <div id="printReportFooter">Voyage Cost Estimator &mdash; Bulk Oil &amp; FMCG Trade Desk. Estimate only; figures are editable inputs and not a firm quotation.</div>
   </div>
 
   <p class="note">
@@ -10100,88 +10132,130 @@ applyFreightSuggestion();
 runCalc();
 
 // ---------- Report export (PDF via print, or PNG image) ----------
-function buildReportMeta(){
+// The report header is built from the same inputs the estimate was run on, so the recipient can
+// see the basis without being handed the tool. Returned as fields rather than one long string:
+// a pipe-separated line is fine on screen and reads as clutter on a printed page.
+function buildReportFields(){
   const vessel = document.getElementById('vessel_type').value;
-  const labels = { GHS: 'GHS Vessels', MR_OLD: 'MR Old', VERA: 'MT Vera (spot)', TRANSTONE: 'MT Transtone (spot)', YQ_HARMONY: 'MT YQ Harmony (spot)', LYSANDRA: 'MT Lysandra (spot)' };
+  const labels = { GHS:'GHS Vessels', MR_OLD:'MR Old', VERA:'MT Vera', TRANSTONE:'MT Transtone',
+                   YQ_HARMONY:'MT YQ Harmony', LYSANDRA:'MT Lysandra' };
   const spotName = document.getElementById('spot_vessel_name').value.trim();
   const vesselLabel = vessel ? (labels[vessel] || vessel) : (spotName || 'Spot Vessel');
-  const portNames = rotation.map(c=>NODES[c.port].name.split(',')[0]).join(' → ');
-  const now = new Date();
-  return vesselLabel + ' &nbsp;|&nbsp; ' + portNames + ' &nbsp;|&nbsp; Generated ' + now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+  const vref = VESSEL_REF[vessel] || {};
+  const speed = parseFloat(document.getElementById('speed').value)||0;
+  const cargo = parseFloat(document.getElementById('cargo_tonnage').value)||0;
+  const heatOn = document.getElementById('heat_on').checked;
+  const heatMt = parseFloat(document.getElementById('heat_mt').value)||0;
+  const d = new Date();
+  const dateStr = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  const fields = [
+    ['Speed',        speed ? speed.toFixed(1)+' kn' : '—'],
+    ['Bunker grade', vref.mainFuel || '—'],
+    ['Cargo',        cargo ? cargo.toLocaleString()+' mt' : '—'],
+    ['Date',         dateStr]
+  ];
+  if(heatOn && heatMt>0) fields.push(['Cargo heating', heatMt.toLocaleString()+' mt']);
+  return { vessel: vesselLabel, route: rotation.map(c=>NODES[c.port].name.split(',')[0]).join(' \u2192 '),
+           fields, dateStr };
+}
+function paintReportHeader(){
+  const f = buildReportFields();
+  document.getElementById('printReportVessel').textContent = f.vessel + '  \u2014  ' + f.route;
+  document.getElementById('printReportGrid').innerHTML =
+    f.fields.map(([k,v])=>`<div><span>${k}</span><b>${v}</b></div>`).join('');
 }
 document.getElementById('downloadPdfBtn').onclick = ()=>{
-  if(!document.querySelector('#resultsArea .stat')){ alert('Click "Calculate Voyage" first, then download the report.'); return; }
-  document.getElementById('printReportMeta').innerHTML = buildReportMeta();
+  if(!document.querySelector('#resultsArea .stat')){ alert('Run Calculate Voyage first — there is no estimate to export yet.'); return; }
+  paintReportHeader();
   window.print();
 };
 // Self-contained image export: draws directly from the already-calculated stat cards and tables
 // onto a <canvas>, with no external library and no network dependency — this can't fail due to a
 // CDN being blocked or unreachable, which a library-based screenshot approach depends on.
 document.getElementById('downloadImgBtn').onclick = ()=>{
-  const stats = document.querySelectorAll('#resultsArea .stat');
-  if(stats.length===0){ alert('Click "Calculate Voyage" first, then download the report.'); return; }
+  if(!document.querySelector('#resultsArea .stat')){ alert('Run Calculate Voyage first — there is no estimate to export yet.'); return; }
   try{
-    const W = 900, PAD = 36;
-    const stat = document.querySelectorAll('#resultsArea .stat');
-    const breakdownTables = document.querySelectorAll('#resultsArea table.breakdown');
-    const legRows = breakdownTables[0] ? breakdownTables[0].querySelectorAll('tbody tr') : [];
-    const portRows = breakdownTables[1] ? breakdownTables[1].querySelectorAll('tbody tr') : [];
-    const costRows = breakdownTables[2] ? breakdownTables[2].querySelectorAll('tbody tr') : [];
-    const lineH = 26;
-    const statRows = Math.ceil(stat.length/2);
-    let estH = 210 + statRows*36 + 40 + (legRows.length+2)*lineH + 40 + (portRows.length+2)*lineH + 40 + (costRows.length+2)*lineH + 60;
-    const canvas = document.createElement('canvas');
-    canvas.width = W*2; canvas.height = estH*2;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(2,2);
-    ctx.fillStyle = '#f4ecd8'; ctx.fillRect(0,0,W,estH);
+    const f = buildReportFields();
+    // Read the rendered tables rather than recomputing: whatever is on screen is what gets exported,
+    // including any manual overrides applied after the calculation.
+    const stats = [...document.querySelectorAll('#resultsArea .stat')].map(el=>({
+      n: el.querySelector('.n').textContent.trim(), l: el.querySelector('.l').textContent.trim() }));
+    const tables = [...document.querySelectorAll('#resultsArea table.breakdown')].map(t=>({
+      head: [...t.querySelectorAll('thead th')].map(th=>th.textContent.trim()),
+      rows: [...t.querySelectorAll('tbody tr')].map(tr=>({
+        cells: [...tr.querySelectorAll('td')].map(td=>td.textContent.trim()),
+        total: tr.classList.contains('total') }))
+    })).filter(t=>t.rows.length);
+
+    const W=1000, PAD=52, INK='#141a21', MUTE='#7b8894', BRASS='#8a6d33', HAIR='#dfd6c2';
+    const measure = document.createElement('canvas').getContext('2d');
+    const rowH=23, headH=26;
+    let h = PAD + 96 + Math.ceil(stats.length/3)*54 + 16;
+    tables.forEach(t=>{ h += headH + t.rows.length*rowH + 30; });
+    h += 46;
+
+    const cv = document.createElement('canvas');
+    const S = 2;                                  // 2x for a crisp image on retina and in slides
+    cv.width = W*S; cv.height = h*S;
+    const c = cv.getContext('2d'); c.scale(S,S);
+    c.fillStyle='#ffffff'; c.fillRect(0,0,W,h);
+    c.textBaseline='alphabetic';
+    const right=(txt,x,y)=>{ c.textAlign='right'; c.fillText(txt,x,y); c.textAlign='left'; };
+    const rule=(y,col,w)=>{ c.strokeStyle=col; c.lineWidth=w; c.beginPath();
+                            c.moveTo(PAD,y); c.lineTo(W-PAD,y); c.stroke(); };
+
     let y = PAD;
-    ctx.fillStyle = '#20242a'; ctx.font = 'bold 22px Georgia, serif';
-    ctx.fillText('Voyage Cost Estimate', PAD, y); y += 22;
-    ctx.strokeStyle = '#b08d4f'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(PAD,y); ctx.lineTo(W-PAD,y); ctx.stroke(); y += 20;
-    ctx.font = '12px Arial'; ctx.fillStyle = '#5b6570';
-    const metaText = buildReportMeta().replace(/&nbsp;/g,' ').replace(/<[^>]+>/g,'');
-    ctx.fillText(metaText, PAD, y); y += 34;
-    // stat cards, two per row
-    ctx.textBaseline = 'alphabetic';
-    for(let i=0;i<stat.length;i+=2){
-      const rowY = y;
-      for(let j=0;j<2;j++){
-        const el = stat[i+j]; if(!el) continue;
-        const n = el.querySelector('.n').textContent, l = el.querySelector('.l').textContent;
-        const x = PAD + j*(W-2*PAD)/2;
-        ctx.fillStyle = '#20242a'; ctx.font = 'bold 19px Georgia, serif';
-        ctx.fillText(n, x, rowY);
-        ctx.fillStyle = '#5b6570'; ctx.font = '11px Arial';
-        ctx.fillText(l.toUpperCase(), x, rowY+16);
-      }
-      y = rowY + 36;
-    }
-    y += 14;
-    function drawTable(title, rows){
-      if(rows.length===0) return;
-      ctx.fillStyle = '#20242a'; ctx.font = 'bold 14px Georgia, serif';
-      ctx.fillText(title, PAD, y); y += 20;
-      ctx.strokeStyle = '#d8c9a3'; ctx.lineWidth = 1;
-      rows.forEach(tr=>{
-        const cells = [...tr.querySelectorAll('td')].map(td=>td.textContent.trim()).filter(t=>t);
-        if(cells.length===0) return;
-        ctx.fillStyle = '#20242a'; ctx.font = '12px Arial';
-        ctx.fillText(cells.join('   |   ').slice(0,110), PAD, y);
-        y += lineH;
+    c.fillStyle=BRASS; c.fillRect(PAD,y,W-2*PAD,3); y += 26;
+    c.fillStyle=INK; c.font='600 27px Georgia, serif';
+    c.fillText('Voyage Cost Estimate', PAD, y); y += 21;
+    c.fillStyle=BRASS; c.font='15px Georgia, serif';
+    c.fillText(f.vessel + '  \u2014  ' + f.route, PAD, y); y += 16;
+    rule(y, HAIR, .8); y += 20;
+    f.fields.forEach(([k,v],i)=>{
+      const x = PAD + i*((W-2*PAD)/f.fields.length);
+      c.fillStyle=MUTE; c.font='10px Arial'; c.fillText(k, x, y);
+      c.fillStyle=INK;  c.font='600 14px Georgia, serif'; c.fillText(v, x, y+17);
+    });
+    y += 27; rule(y, HAIR, .8); y += 30;
+
+    stats.forEach((st,i)=>{
+      const col=i%3, x=PAD+col*((W-2*PAD)/3), rowY=y+Math.floor(i/3)*54;
+      c.fillStyle=INK;  c.font='600 21px Georgia, serif'; c.fillText(st.n, x, rowY);
+      c.fillStyle=MUTE; c.font='10px Arial';              c.fillText(st.l, x, rowY+16);
+    });
+    y += Math.ceil(stats.length/3)*54 + 12;
+
+    tables.forEach(t=>{
+      const nCols=Math.max(t.head.length, ...t.rows.map(r=>r.cells.length));
+      const labelW=(W-2*PAD)*(nCols<=2?0.62:0.40);
+      const numW=(W-2*PAD-labelW)/Math.max(1,nCols-1);
+      const colRight=i=>PAD+labelW+numW*i;
+      c.fillStyle=BRASS; c.font='600 12px Arial';
+      t.head.forEach((th,i)=>{ i===0 ? c.fillText(th,PAD,y) : right(th,colRight(i),y); });
+      y += 8; rule(y, BRASS, 1.1); y += rowH-6;
+      t.rows.forEach(r=>{
+        if(r.total){ rule(y-15, BRASS, 1.1); c.font='600 12.5px Arial'; c.fillStyle=INK; }
+        else       { rule(y-15, HAIR, .5);   c.font='12px Arial';       c.fillStyle=INK; }
+        r.cells.forEach((cell,i)=>{
+          if(i===0){ let t2=cell; while(measure.measureText(t2).width>labelW-12 && t2.length>4) t2=t2.slice(0,-1);
+                     c.fillText(t2===cell?cell:t2+'\u2026', PAD, y); }
+          else right(cell, colRight(i), y);
+        });
+        y += rowH;
       });
-      y += 14;
-    }
-    drawTable('Sea Legs', legRows);
-    drawTable('Port Calls', portRows);
-    drawTable('Cost Breakdown', costRows);
-    const link = document.createElement('a');
-    link.download = 'voyage-cost-estimate-' + Date.now() + '.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+      y += 22;
+    });
+
+    y = h - 26; rule(y-12, HAIR, .8);
+    c.fillStyle=MUTE; c.font='10px Arial';
+    c.fillText('Voyage Cost Estimator \u2014 Bulk Oil & FMCG Trade Desk. Estimate only, not a firm quotation.', PAD, y);
+    right(f.dateStr, W-PAD, y);
+
+    const a=document.createElement('a');
+    a.download = 'Voyage Estimate \u2014 ' + f.vessel + ' \u2014 ' + f.dateStr.replace(/ /g,'-') + '.png';
+    a.href = cv.toDataURL('image/png'); a.click();
   } catch(err){
-    alert('Image export hit an error: ' + err.message + '. Try Download Report (PDF) instead.');
+    alert('Image export failed: ' + err.message + '. Use Download Report (PDF) instead.');
   }
 };
 </script>
