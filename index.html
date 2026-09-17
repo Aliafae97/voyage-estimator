@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Voyage Cost Estimator</title>
+<title>Voyage Cost Estimator — Global Horizon Shipping</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <style>
@@ -16,15 +16,37 @@
   *{box-sizing:border-box;}
   body{ margin:0; background:var(--ink); font-family:Georgia,'Times New Roman',serif; color:var(--parchment); }
   .wrap{ max-width:1240px; margin:0 auto; padding:22px 20px 44px; }
-  header .eyebrow{ font-family:'SFMono-Regular',Consolas,monospace; letter-spacing:.18em; text-transform:uppercase; font-size:11px; color:var(--brass); margin:0 0 6px; }
-  h1{ margin:0; font-size:25px; font-weight:600; }
-  header p.sub{ margin:6px 0 0; color:#9fb2bd; font-size:14px; max-width:760px; }
-  h2.sec{ font-size:13px; text-transform:uppercase; letter-spacing:.1em; color:var(--brass);
-          margin:0 0 12px; font-family:'SFMono-Regular',Consolas,monospace; }
+  /* A faint chart grid on the deep ground: the subject is navigation, and it gives the page
+     depth without decoration competing with the data. */
+  body::before{ content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+        background-image:linear-gradient(rgba(176,141,79,.055) 1px, transparent 1px),
+                         linear-gradient(90deg, rgba(176,141,79,.055) 1px, transparent 1px);
+        background-size:64px 64px; }
+  .wrap{ position:relative; z-index:1; }
 
-  .panel{ background:var(--parchment); color:var(--text-dark); border-radius:6px;
-          padding:18px 20px; margin:16px 0; border:1px solid var(--parchment-line);
-          box-shadow:0 6px 18px rgba(0,0,0,.25); }
+  header{ display:flex; align-items:center; gap:16px; padding-bottom:16px; margin-bottom:4px;
+        border-bottom:1px solid rgba(176,141,79,.28); }
+  header .mark{ color:var(--brass); flex:none; line-height:0; }
+  .masthead h1{ margin:0; font-size:27px; font-weight:600; letter-spacing:.005em; line-height:1.1; }
+  .masthead .org{ margin:4px 0 0; font-size:13px; letter-spacing:.14em; text-transform:uppercase;
+        color:var(--brass); font-family:'SFMono-Regular',Consolas,monospace; }
+  h1{ margin:0; font-size:25px; font-weight:600; }
+
+  /* Section headings read as numbered steps, because the tool genuinely is a sequence:
+     build the rotation, set the variables, optionally redraw the route, read the estimate. */
+  h2.sec{ display:flex; align-items:center; gap:10px; font-size:13px; text-transform:uppercase;
+          letter-spacing:.1em; color:var(--brass); margin:0 0 14px; padding-bottom:10px;
+          border-bottom:1px solid var(--parchment-line);
+          font-family:'SFMono-Regular',Consolas,monospace; }
+  h2.sec i{ font-style:normal; flex:none; width:21px; height:21px; border-radius:50%;
+          background:var(--ink); color:var(--parchment); font-size:11px;
+          display:inline-flex; align-items:center; justify-content:center; letter-spacing:0; }
+  h2.sec .opt{ margin-left:auto; font-size:10px; letter-spacing:.04em; text-transform:none;
+          color:var(--text-mute); font-style:italic; }
+
+  .panel{ background:var(--parchment); color:var(--text-dark); border-radius:7px;
+          padding:20px 22px; margin:18px 0; border:1px solid var(--parchment-line);
+          box-shadow:0 1px 0 rgba(255,255,255,.5) inset, 0 10px 26px rgba(0,0,0,.30); }
 
   /* rotation table */
   table.rot{ width:100%; border-collapse:collapse; font-size:14px; }
@@ -83,21 +105,28 @@
   #map{ height:600px; border-radius:6px; border:1px solid var(--parchment-line); }
   .leaflet-control-layers{ font-family:Georgia,serif; font-size:13px; }
 
-  .stat-row{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
-  .stat{ background:#fffdf8; border:1px solid var(--parchment-line); border-radius:5px; padding:10px 14px; flex:1; min-width:130px; }
-  .stat .n{ font-family:'SFMono-Regular',Consolas,monospace; font-size:20px; color:var(--ink); }
-  .stat .l{ font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); margin-top:2px; }
-  .stat.hero{ background:var(--ink); }
-  .stat.hero .n{ color:var(--route); font-size:24px; }
+  .stat-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+  /* The total cost is the answer the tool exists to give, so it gets the weight and everything
+     else stays quiet — a left keyline instead of a second border colour per card. */
+  .stat{ background:#fffdf8; border:1px solid var(--parchment-line); border-left:3px solid var(--parchment-line);
+         border-radius:5px; padding:11px 14px; flex:1; min-width:132px; }
+  .stat .n{ font-family:'SFMono-Regular',Consolas,monospace; font-size:20px; color:var(--ink);
+         font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+  .stat .l{ font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--text-mute); margin-top:3px; }
+  .stat.hero{ background:var(--ink); border-color:var(--ink); border-left:3px solid var(--route);
+         flex:1.5 1 220px; padding:13px 17px; }
+  .stat.hero .n{ color:var(--route); font-size:27px; }
   .stat.hero .l{ color:#9fb2bd; }
 
   .cols{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
   @media (max-width:900px){ .cols{ grid-template-columns:1fr; } }
 
   table.breakdown{ width:100%; border-collapse:collapse; font-size:13.5px;
-                   font-family:'SFMono-Regular',Consolas,monospace; }
-  table.breakdown td, table.breakdown th{ padding:6px 4px; border-bottom:1px dashed var(--parchment-line); }
-  table.breakdown th{ text-align:left; color:var(--text-mute); font-size:10.5px; text-transform:uppercase; }
+                   font-family:'SFMono-Regular',Consolas,monospace; font-variant-numeric:tabular-nums; }
+  table.breakdown td, table.breakdown th{ padding:7px 5px; border-bottom:1px solid rgba(216,204,168,.55); }
+  table.breakdown th{ text-align:left; color:var(--text-mute); font-size:10.5px; text-transform:uppercase;
+                   letter-spacing:.05em; border-bottom:1.5px solid var(--brass); }
+  table.breakdown tbody tr:hover{ background:rgba(255,253,248,.7); }
   table.breakdown td.num{ text-align:right; }
   table.breakdown tr.total td{ border-top:2px solid var(--text-dark); border-bottom:none; font-weight:bold; padding-top:8px; }
 
@@ -179,6 +208,8 @@
 #printReportHeader .rule { height:2.5px; background:var(--brass); margin:0 0 9px 0; }
 #printReportHeader h1 { font-family:Georgia,serif; font-size:21px; line-height:1.15; margin:0;
       letter-spacing:.01em; color:#141a21; }
+#printReportHeader .org { font-family:'SFMono-Regular',Consolas,monospace; font-size:9px;
+      letter-spacing:.16em; text-transform:uppercase; color:#8a6d33; margin:0 0 3px 0; }
 #printReportHeader .vessel { font-family:Georgia,serif; font-size:13px; color:#5b4a26; margin:2px 0 11px 0; }
 #printReportHeader .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px 18px;
       border-top:.6px solid #dfd6c2; border-bottom:.6px solid #dfd6c2; padding:8px 0; }
@@ -191,13 +222,23 @@
 <body>
 <div class="wrap">
   <header>
-    <p class="eyebrow">Bulk Oil &amp; FMCG — Trade Desk Tool</p>
-    <h1>Voyage Cost Estimator</h1>
-    <p class="sub">Build a port rotation of any length, set your hire, bunker and consumption variables, and get sea time, port time, and total voyage cost — distances are routed through real shipping lanes and chokepoints, not straight lines.</p>
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 48 48" width="44" height="44">
+        <circle cx="24" cy="24" r="21" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".55"/>
+        <circle cx="24" cy="24" r="15" fill="none" stroke="currentColor" stroke-width=".7" opacity=".35"/>
+        <path d="M24 4.5v39M4.5 24h39" stroke="currentColor" stroke-width=".7" opacity=".3"/>
+        <path d="M24 7 27.4 21 24 24 20.6 21Z" fill="currentColor"/>
+        <path d="M24 41 20.6 27 24 24 27.4 27Z" fill="currentColor" opacity=".45"/>
+      </svg>
+    </div>
+    <div class="masthead">
+      <h1>Voyage Cost Estimator</h1>
+      <p class="org">Global Horizon Shipping</p>
+    </div>
   </header>
 
   <div class="panel no-print">
-    <h2 class="sec">Port Rotation</h2>
+    <h2 class="sec"><i>1</i>Port Rotation</h2>
     <datalist id="allPortsDatalist"></datalist>
     <table class="rot" id="rotTable">
       <thead><tr><th style="width:36px">#</th><th>Port</th><th style="width:110px">Call Type</th><th style="width:110px">Days Alongside</th><th style="width:120px">Port Duty (USD)</th><th style="width:70px"></th></tr></thead>
@@ -207,7 +248,7 @@
   </div>
 
   <div class="panel no-print">
-    <h2 class="sec">Voyage Variables</h2>
+    <h2 class="sec"><i>2</i>Voyage Variables</h2>
     <div class="vargrid">
       <div class="field"><label>Speed (knots)</label><input type="number" id="speed" value="12" step="0.5"></div>
       <div class="field"><label>Daily Hire (USD/day)</label><input type="number" id="hire" value="12000" step="500"></div>
@@ -327,7 +368,7 @@
   </div>
 
   <div class="panel no-print">
-    <h2 class="sec">Draw a Custom Route (optional)</h2>
+    <h2 class="sec"><i>3</i>Draw a Custom Route<span class="opt">optional</span></h2>
     <div class="drawbar">
       <select id="legPicker"></select>
       <button class="btn-start" id="startDraw">Draw This Leg Manually</button>
@@ -350,6 +391,7 @@
   </div>
 
   <div class="panel">
+    <h2 class="sec no-print"><i>4</i>Estimate</h2>
     <div id="reportActions">
       <span class="dlLabel">Download this estimate</span>
       <button class="btn-dl btn-dl-primary" id="downloadPdfBtn">
@@ -364,6 +406,7 @@
     </div>
     <div id="printReportHeader">
       <div class="rule"></div>
+      <p class="org">Global Horizon Shipping</p>
       <h1>Voyage Cost Estimate</h1>
       <div class="vessel" id="printReportVessel"></div>
       <div class="grid" id="printReportGrid"></div>
@@ -10226,6 +10269,8 @@ document.getElementById('downloadImgBtn').onclick = ()=>{
 
     let y = PAD;
     c.fillStyle=BRASS; c.fillRect(PAD,y,W-2*PAD,3); y += 26;
+    c.fillStyle=BRASS; c.font='11px Arial';
+    c.fillText('GLOBAL HORIZON SHIPPING', PAD, y-4); y += 14;
     c.fillStyle=INK; c.font='600 27px Georgia, serif';
     c.fillText('Voyage Cost Estimate', PAD, y); y += 21;
     c.fillStyle=BRASS; c.font='15px Georgia, serif';
