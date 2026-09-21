@@ -33,7 +33,7 @@
   h1{ margin:0; font-size:25px; font-weight:600; }
 
   /* Section headings read as numbered steps, because the tool genuinely is a sequence:
-     build the rotation, set the variables, optionally redraw the route, read the estimate. */
+     build the rotation, set the variables, set the bunkers, read the estimate. */
   h2.sec{ display:flex; align-items:center; gap:10px; font-size:13px; text-transform:uppercase;
           letter-spacing:.1em; color:var(--brass); margin:0 0 14px; padding-bottom:10px;
           border-bottom:1px solid var(--parchment-line);
@@ -97,24 +97,54 @@
   .fuelhead .sub{ font-weight:400; text-transform:none; letter-spacing:.02em;
                   font-size:11px; color:var(--strait); }
 
-  button#calc{ margin-top:18px; background:var(--ink); color:var(--parchment); border:none; border-radius:4px;
-        padding:12px 26px; font-family:'SFMono-Regular',Consolas,monospace; font-size:13.5px;
-        letter-spacing:.06em; text-transform:uppercase; cursor:pointer; box-shadow:0 3px 0 var(--ink-deep); }
-  button#calc:hover{ background:#173247; }
+  button#calc{ display:block; width:100%; margin-top:22px; background:var(--route); color:#fff; border:none;
+        border-radius:6px; padding:17px 26px; font-family:'SFMono-Regular',Consolas,monospace; font-size:17px;
+        font-weight:700; letter-spacing:.1em; text-transform:uppercase; cursor:pointer;
+        box-shadow:0 4px 0 #a85a12, 0 8px 18px rgba(217,121,31,.35); transition:background .15s ease, transform .05s ease; }
+  button#calc:hover{ background:#e8872a; }
+  button#calc:active{ transform:translateY(2px); box-shadow:0 2px 0 #a85a12; }
+  .savebar{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:8px;
+        font-size:11.5px; color:var(--text-mute); }
+  .linkbtn{ background:none; border:none; padding:0; color:var(--text-mute); text-decoration:underline;
+        cursor:pointer; font-family:Georgia,serif; font-size:11.5px; }
+  .linkbtn:hover{ color:var(--disch); }
+  /* routing preference, now inside the Port Rotation panel */
+  .routepref{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 22px; margin-top:14px;
+        padding-top:12px; border-top:1px dashed var(--parchment-line); }
+  .routepref-head{ font-family:'SFMono-Regular',Consolas,monospace; font-size:11px; font-weight:700;
+        color:var(--strait); text-transform:uppercase; letter-spacing:.09em; }
+  .routeopt{ display:flex; align-items:center; gap:7px; font-size:13.5px; color:var(--text-dark); cursor:pointer; }
+  .routeopt input{ width:17px; height:17px; margin:0; }
+  /* vessel selector + scrubber */
+  .field select{ font-family:Georgia,serif; font-size:15px; padding:8px 10px; border:1px solid var(--parchment-line);
+        border-radius:4px; background:#fffdf8; color:var(--text-dark); }
+  label.scrubber{ display:flex; align-items:center; gap:8px; cursor:pointer; font-family:Georgia,serif;
+        font-size:14px; text-transform:none; letter-spacing:normal; color:var(--text-dark);
+        border:1px solid var(--parchment-line); background:#fffdf8; border-radius:4px; padding:8px 10px; }
+  label.scrubber input{ width:17px; height:17px; margin:0; }
+  .gradenote{ font-size:11px; color:var(--text-mute); }
+  /* consumption detail, collapsed by default */
+  .consdetails{ margin-top:16px; border:1px dashed var(--parchment-line); border-radius:5px; padding:10px 14px; }
+  .consdetails summary{ cursor:pointer; font-family:'SFMono-Regular',Consolas,monospace; font-size:12px;
+        letter-spacing:.06em; text-transform:uppercase; color:var(--strait); }
+  .consdetails[open] summary{ margin-bottom:4px; }
 
   #map{ height:600px; border-radius:6px; border:1px solid var(--parchment-line); }
   .leaflet-control-layers{ font-family:Georgia,serif; font-size:13px; }
 
-  .stat-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+  .stat-row{ display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:10px; }
+  .stat-row.bottom{ grid-template-columns:repeat(2,1fr); margin-bottom:18px; }
+  @media (max-width:900px){ .stat-row{ grid-template-columns:repeat(2,1fr); } }
   /* The total cost is the answer the tool exists to give, so it gets the weight and everything
      else stays quiet — a left keyline instead of a second border colour per card. */
   .stat{ background:#fffdf8; border:1px solid var(--parchment-line); border-left:3px solid var(--parchment-line);
-         border-radius:5px; padding:11px 14px; flex:1; min-width:132px; }
+         border-radius:5px; padding:11px 14px; min-width:0; }
   .stat .n{ font-family:'SFMono-Regular',Consolas,monospace; font-size:20px; color:var(--ink);
          font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
   .stat .l{ font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--text-mute); margin-top:3px; }
   .stat.hero{ background:var(--ink); border-color:var(--ink); border-left:3px solid var(--route);
-         flex:1.5 1 220px; padding:13px 17px; }
+         padding:13px 17px; }
+  .stat.hero.neg .n{ color:#ec7a70; }
   .stat.hero .n{ color:var(--route); font-size:27px; }
   .stat.hero .l{ color:#9fb2bd; }
 
@@ -245,33 +275,21 @@
       <tbody id="rotBody"></tbody>
     </table>
     <button class="addrow" id="addRow">+ Add Port Call</button>
+
+    <div class="routepref">
+      <span class="routepref-head">Routing Preference</span>
+      <label class="routeopt"><input type="checkbox" id="avoid_suez" checked> Avoid Suez (route via Cape of Good Hope)</label>
+      <label class="routeopt"><input type="checkbox" id="avoid_piracy" checked> Avoid Gulf of Aden / Somali piracy area</label>
+    </div>
   </div>
 
   <div class="panel no-print">
     <h2 class="sec"><i>2</i>Voyage Variables</h2>
     <div class="vargrid">
       <div class="field"><label>Speed (knots)</label><input type="number" id="speed" value="12" step="0.5"></div>
-      <div class="field"><label>Daily Hire (USD/day)</label><input type="number" id="hire" value="12000" step="500"></div>
+      <div class="field"><label>Daily Hire (USD/day)</label><input type="number" id="hire" value="" placeholder="0" step="500"></div>
       <div class="field"><label>Other Costs (USD, lump sum)</label><input type="number" id="other" value="15000" step="500"></div>
       <div class="field"></div>
-
-      <div class="fuelhead">Routing Preference</div>
-      <div class="field" style="grid-column:span 4; flex-direction:row; align-items:center; gap:8px;">
-        <input type="checkbox" id="avoid_suez" checked style="width:18px; height:18px; margin:0;">
-        <label for="avoid_suez" style="text-transform:none; font-size:13.5px; letter-spacing:normal; color:var(--text-dark); cursor:pointer;">
-          Avoid Suez Canal — route around the Cape of Good Hope instead, for any leg where Suez isn't strictly necessary (e.g. Asia ↔ West/Southern Africa). Automatically stays off for legs that genuinely need it (Turkey, Egypt, Mediterranean/Europe ports).
-        </label>
-      </div>
-      <div class="field" style="grid-column:span 4; flex-direction:row; align-items:center; gap:8px;">
-        <input type="checkbox" id="avoid_piracy" checked style="width:18px; height:18px; margin:0;">
-        <label for="avoid_piracy" style="text-transform:none; font-size:13.5px; letter-spacing:normal; color:var(--text-dark); cursor:pointer;">
-          Avoid Gulf of Aden / Somali Basin high-risk area — routes any leg crossing this corridor (e.g. Aden ↔ East Africa) around it instead of straight through, matching current industry piracy-avoidance practice.
-        </label>
-      </div>
-
-      <div class="fuelhead">Distance Correction</div>
-      <div class="field"><label>Distance Adjustment (%)</label><input type="number" id="dist_adj" value="0" step="1"></div>
-      <div class="field" style="grid-column:span 3; justify-content:flex-end;"><span style="font-size:11.5px; color:var(--text-mute); line-height:1.4;">If your own routing software (NetPas, sea-distances.org, etc.) consistently shows longer/shorter distances than this tool, enter the % difference here (e.g. <b>+6</b> if this tool reads 6% short). It scales every auto-routed and hand-drawn leg — manual overrides are left untouched, since those are already your known-correct number. Sea days, bunker cost, hire days, and cost/tonne all update with it.</span></div>
 
       <div class="fuelhead">Cargo</div>
       <div class="field"><label>Cargo Tonnage (mt, for cost/tonne)</label><input type="number" id="cargo_tonnage" value="47000" step="500"></div>
@@ -291,46 +309,43 @@
       <div class="field" id="ws_flatrate_wrap" style="display:none;"><label id="ws_flatrate_label">Flat Rate (USD/mt)</label><input type="number" id="ws_flatrate" value="0" step="0.1"><div id="ws_flatrate_note" style="font-size:11px; color:var(--text-mute); margin-top:3px;"></div></div>
       <div class="field"><label>Broker Commission (%)</label><input type="number" id="broker_commission" value="0" step="0.25" min="0" max="100"></div>
       <div class="field" style="grid-column:span 2; justify-content:flex-end;"><span style="font-size:11.5px; color:var(--text-mute); line-height:1.4;">Lump sum or USD/mt feed Cargo Tonnage directly; Worldscale computes Freight = WS% × Flat Rate × Cargo Tonnage. Broker Commission is deducted before Voyage Profit and TCE.</span></div>
+    </div>
+  </div>
 
-      <div class="fuelhead">Vessel</div>
+  <div class="panel no-print">
+    <h2 class="sec"><i>3</i>Bunker Details</h2>
+    <div class="vargrid">
+      <div class="fuelhead" style="margin-top:0;">Vessel</div>
       <div class="field" style="grid-column:span 2;">
-        <label>Select to auto-fill Consumption, Port Duty &amp; Freight Rate (all remain editable)</label>
+        <label>Vessel size class (auto-fills consumption &amp; port duty &mdash; all editable)</label>
         <select id="vessel_type">
-          <option value="GHS">GHS Vessels</option>
-          <option value="VERA">MT Vera (spot)</option>
-          <option value="TRANSTONE">MT Transtone (spot)</option>
-          <option value="YQ_HARMONY">MT YQ Harmony (spot)</option>
-          <option value="LYSANDRA">MT Lysandra (spot)</option>
+          <option value="HANDY">Handy &middot; 10,000&ndash;25,000 DWT</option>
+          <option value="MR1">MR1 &middot; 25,000&ndash;40,000 DWT</option>
+          <option value="MR2" selected>MR2 &middot; 40,000&ndash;55,000 DWT</option>
+          <option value="LR1">LR1 &middot; 55,000&ndash;80,000 DWT</option>
+          <option value="LR2">LR2 &middot; 80,000&ndash;120,000 DWT</option>
+          <option value="AFRAMAX">Aframax &middot; 80,000&ndash;120,000 DWT</option>
+          <option value="SUEZMAX">Suezmax &middot; 120,000&ndash;200,000 DWT</option>
+          <option value="VLCC">VLCC &middot; 200,000&ndash;320,000 DWT</option>
         </select>
       </div>
-      <div class="field" id="spot_name_wrap" style="display:none;"><label>Spot Vessel Name</label><input type="text" id="spot_vessel_name" placeholder="e.g. MT Ocean Glory"></div>
-
-      <div class="fuelhead">Singapore Benchmark (USD / mt)<span class="sub"> — as published</span></div>
-      <div class="field"><label>HSFO <span class="gradehint">IFO380, 3.5%S</span></label><input type="number" id="bm_hsfo" value="430" step="5"></div>
-      <div class="field"><label>VLSFO <span class="gradehint">0.50%S</span></label><input type="number" id="bm_vlsfo" value="580" step="5"></div>
-      <div class="field"><label>LSMGO <span class="gradehint">MGO / gasoil</span></label><input type="number" id="bm_lsmgo" value="750" step="5"></div>
-      <div class="field">
-        <label>Prices as of</label>
-        <input type="date" id="priceDate">
+      <div class="field" style="justify-content:flex-end;">
+        <label class="scrubber"><input type="checkbox" id="scrubber"> Scrubber fitted</label>
+        <span id="fuelGradeNote" class="gradenote"></span>
       </div>
-      <div class="field" style="grid-column:1/-1; display:block;">
-        <a href="https://shipandbunker.com/prices/apac/sea/sg-sin-singapore" target="_blank" rel="noopener"
-           class="addrow" style="display:inline-block; margin:0 10px 0 0; text-decoration:none;">Open Ship &amp; Bunker — Singapore &#8599;</a>
-        <span id="priceAge" style="font-size:11.5px; color:var(--text-mute); line-height:1.5;"></span>
-      </div>
+      <div class="field" id="spot_name_wrap" style="display:none;"><label>Vessel Name (optional)</label><input type="text" id="spot_vessel_name" placeholder="e.g. MT Ocean Glory"></div>
 
-      <div class="fuelhead">Premium / Discount (USD / mt)<span class="sub"> — your spread to the benchmark</span></div>
-      <div class="field"><label>HSFO</label><input type="number" id="prem_hsfo" value="0" step="1"></div>
-      <div class="field"><label>VLSFO</label><input type="number" id="prem_vlsfo" value="0" step="1"></div>
-      <div class="field"><label>LSMGO</label><input type="number" id="prem_lsmgo" value="0" step="1"></div>
+      <div class="fuelhead">Bunker Prices (USD / mt)</div>
+      <div class="field"><label>HSFO</label><input type="number" id="p_hsfo" value="" placeholder="0" step="5"></div>
+      <div class="field"><label>VLSFO</label><input type="number" id="p_vlsfo" value="" placeholder="0" step="5"></div>
+      <div class="field"><label>LSMGO</label><input type="number" id="p_lsmgo" value="" placeholder="0" step="5"></div>
       <div class="field"></div>
 
-      <div class="fuelhead">Price Used in the Estimate (USD / mt)<span class="sub"> — benchmark + premium</span></div>
-      <div class="field"><label>HSFO</label><input type="number" id="p_hsfo" value="430" step="5" readonly class="computed"></div>
-      <div class="field"><label>VLSFO</label><input type="number" id="p_vlsfo" value="580" step="5" readonly class="computed"></div>
-      <div class="field"><label>LSMGO</label><input type="number" id="p_lsmgo" value="750" step="5" readonly class="computed"></div>
-      <div class="field"></div>
+    </div>
 
+    <details id="consDetails" class="consdetails">
+      <summary>Show consumption details</summary>
+      <div class="vargrid">
       <div class="fuelhead">Consumption While Sailing<span class="sub"> — Ballast (mt / day)</span></div>
       <div class="field"><label>HSFO</label><input type="number" id="cs_hsfo_ballast" value="0" step="0.5"></div>
       <div class="field"><label>VLSFO</label><input type="number" id="cs_vlsfo_ballast" value="20" step="0.5"></div>
@@ -343,16 +358,6 @@
       <div class="field"><label>LSMGO</label><input type="number" id="cs_lsmgo_laden" value="0" step="0.5"></div>
       <div class="field"></div>
 
-      <div class="fuelhead">Cargo Heating<span class="sub"> &mdash; one lump for the whole voyage, not per day</span></div>
-      <div class="field"><label>Heating fuel (mt / voyage)</label><input type="number" id="heat_mt" value="200" step="10"></div>
-      <div class="field" style="grid-column:span 2; align-self:end;">
-        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-          <input type="checkbox" id="heat_on" style="width:auto; margin:0;">
-          <span>Include cargo heating in the calculation</span>
-        </label>
-      </div>
-      <div class="field"></div>
-
       <div class="fuelhead">Consumption In Port<span class="sub"> — Loading (mt / day)</span></div>
       <div class="field"><label>HSFO</label><input type="number" id="cp_hsfo_load" value="0" step="0.5"></div>
       <div class="field"><label>VLSFO</label><input type="number" id="cp_vlsfo_load" value="3" step="0.5"></div>
@@ -363,36 +368,30 @@
       <div class="field"><label>HSFO</label><input type="number" id="cp_hsfo_disch" value="0" step="0.5"></div>
       <div class="field"><label>VLSFO</label><input type="number" id="cp_vlsfo_disch" value="3" step="0.5"></div>
       <div class="field"><label>LSMGO</label><input type="number" id="cp_lsmgo_disch" value="2" step="0.5"></div>
-    </div>
+      </div>
+    </details>
+
     <button id="calc">Calculate Voyage</button>
-  </div>
-
-  <div class="panel no-print">
-    <h2 class="sec"><i>3</i>Draw a Custom Route<span class="opt">optional</span></h2>
-    <div class="drawbar">
-      <select id="legPicker"></select>
-      <button class="btn-start" id="startDraw">Draw This Leg Manually</button>
-      <button class="btn-ghost" id="openMarineTraffic">View Leg in MarineTraffic ↗</button>
-      <span style="font-size:12px; color:var(--text-mute);">Traces the sea lane by hand for maximum accuracy — click points on the map between the two ports, then Finish. Use MarineTraffic or the OpenSeaMap overlay (map layers icon) to see real Traffic Separation Schemes before you click.</span>
-    </div>
-    <div class="drawstatus" id="drawStatus">
-      <span id="drawInstr">Click along the route. Click near the destination when done.</span>
-      <span>Points: <b id="drawCount">0</b></span>
-      <span>Distance so far: <b id="drawDist">0</b> nm</span>
-      <button class="btn-ghost" id="undoPoint">Undo Last Point</button>
-      <button class="btn-ghost" id="clearPoints">Clear</button>
-      <button class="btn-finish" id="finishDraw">Finish &amp; Save Route</button>
-      <button class="btn-cancel" id="cancelDraw">Cancel</button>
+    <div class="savebar">
+      <span id="restoreNote"></span>
+      <button type="button" id="clearSaved" class="linkbtn">Clear saved inputs &amp; start fresh</button>
     </div>
   </div>
-
   <div class="panel no-print" style="padding:10px;">
     <div id="map"></div>
   </div>
 
   <div class="panel">
     <h2 class="sec no-print"><i>4</i>Estimate</h2>
-    <div id="reportActions">
+    <div id="printReportHeader">
+      <div class="rule"></div>
+      <p class="org">Global Horizon Shipping</p>
+      <h1>Voyage Cost Estimate</h1>
+      <div class="vessel" id="printReportVessel"></div>
+      <div class="grid" id="printReportGrid"></div>
+    </div>
+    <div id="resultsArea"><div class="placeholder">Set up your rotation and variables, then hit Calculate Voyage.</div></div>
+    <div id="reportActions" style="margin:18px 0 0;">
       <span class="dlLabel">Download this estimate</span>
       <button class="btn-dl btn-dl-primary" id="downloadPdfBtn">
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5v8.5m0 0L4.8 6.8M8 10l3.2-3.2M2 12v1.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -404,18 +403,10 @@
       </button>
       <span class="dlHint">PDF opens the print dialog &mdash; choose Save as PDF.</span>
     </div>
-    <div id="printReportHeader">
-      <div class="rule"></div>
-      <p class="org">Global Horizon Shipping</p>
-      <h1>Voyage Cost Estimate</h1>
-      <div class="vessel" id="printReportVessel"></div>
-      <div class="grid" id="printReportGrid"></div>
-    </div>
-    <div id="resultsArea"><div class="placeholder">Set up your rotation and variables, then hit Calculate Voyage.</div></div>
   </div>
 
   <p class="note">
-    Distances route through the Eurostat SeaRoute / MARNET maritime network (8,400+ real waypoints, github.com/eurostat/searoute, EUPL-1.2), with canal and strait passages (Suez, Panama, Malacca, Gibraltar, Bab-el-Mandeb, and others) identified from the dataset's own tagging rather than hand-picked node clusters — plus a small number of supplementary waypoints added and geographically verified where that network's real coverage had a gap. The Avoid Piracy Zone toggle covers the Gulf of Aden / Somali Basin corridor specifically; it is not an official designation (the industry's old fixed "High Risk Area" was retired in 2023) and the actual current risk picture shifts — check current UKMTO/BIMCO/IMB guidance rather than relying on this alone. Selecting a Vessel Type pre-fills Consumption, Port Duty, and Freight Rate from a tanker chartering reference sheet — every pre-filled number is a normal editable field, not a locked value, and coverage is partial (not every port or route pair has reference data). Bunker prices are still placeholders — replace with current MABUX/Platts prices. The map defaults to a nautical chart basemap — use the layers icon top-right to switch to a standard map or turn on OpenSeaMap's shipping-lane/buoy overlay for tracing manual routes more precisely. Canal transit dues, agency fees, and anything not covered by Port Duty should be folded into "Other Costs".
+    Distances route through the Eurostat SeaRoute / MARNET maritime network (8,400+ real waypoints, github.com/eurostat/searoute, EUPL-1.2), with canal and strait passages (Suez, Panama, Malacca, Gibraltar, Bab-el-Mandeb, and others) identified from the dataset's own tagging rather than hand-picked node clusters — plus a small number of supplementary waypoints added and geographically verified where that network's real coverage had a gap. The Avoid Piracy Zone toggle covers the Gulf of Aden / Somali Basin corridor specifically; it is not an official designation (the industry's old fixed "High Risk Area" was retired in 2023) and the actual current risk picture shifts — check current UKMTO/BIMCO/IMB guidance rather than relying on this alone. Selecting a Vessel Type pre-fills Consumption, Port Duty, and Freight Rate from a tanker chartering reference sheet — every pre-filled number is a normal editable field, not a locked value, and coverage is partial (not every port or route pair has reference data). Enter current bunker prices for the three grades before quoting. The map defaults to a nautical chart basemap — use the layers icon top-right to switch to a standard map or turn on OpenSeaMap's shipping-lane/buoy overlay. Canal transit dues, agency fees, and anything not covered by Port Duty should be folded into "Other Costs".
   </p>
 </div>
 
@@ -9163,7 +9154,7 @@ const PORT_DUTY_ACTUAL = {
   lagos: 1120
 };
 const PORT_COST_REF = {"new_york":{"MR":45000,"LR1":55000,"LR2":75000},"rotterdam":{"MR":55000,"LR1":85000,"LR2":90000,"SUEZ":150000},"brisbane":{"MR":45000,"LR1":60000,"LR2":90000},"buenos_aires":{"MR":110000,"LR1":135000,"LR2":170000},"callao":{"MR":60000},"cape_town":{"MR":25000,"LR1":30000,"LR2":45000},"chittagong":{"MR":35000,"LR1":50000,"LR2":65000},"chennai":{"MR":55000,"LR1":85000,"LR2":135000},"colombo":{"MR":15000,"LR1":20000,"LR2":25000},"dar_es_salaam":{"MR":40000,"LR1":50000,"LR2":120000,"AFRA":120000},"djibouti":{"MR":15000,"LR1":20000},"dumai":{"MR":50000,"LR1":60000,"LR2":75000},"durban":{"MR":25000,"LR1":35000,"LR2":45000},"ennore":{"MR":55000,"LR1":75000,"LR2":110000},"fujairah":{"MR":12500,"LR1":17500,"LR2":25000},"haldia":{"LR1":20000},"ho_chi_minh":{"MR":30000},"hong_kong":{"MR":35000,"LR1":35000},"houston":{"MR":40000,"LR1":65000,"LR2":90000},"jakarta":{"MR":30000,"LR1":35000,"LR2":40000},"jebel_ali":{"MR":25000,"LR1":30000,"LR2":45000},"jubail":{"MR":25000,"LR1":30000,"LR2":35000},"kandla":{"MR":65000,"LR1":90000,"LR2":125000},"lagos":{"MR":30000,"LR1":35000,"LR2":45000},"los_angeles":{"MR":100000,"LR1":125000,"LR2":150000},"luanda":{"LR2":50000},"medan":{"MR":30000},"melbourne":{"MR":55000,"LR1":80000,"LR2":95000},"mombasa":{"MR":30000,"LR1":35000,"LR2":55000},"new_mangalore":{"MR":40000,"LR1":50000,"LR2":70000},"ningbo":{"LR2":75000},"paradip":{"MR":90000,"LR1":100000,"LR2":115000},"pasir_gudang":{"MR":20000,"LR1":30000,"LR2":30000},"port_klang":{"MR":20000,"LR1":30000,"LR2":30000},"port_sudan":{"MR":40000},"qingdao":{"MR":25000,"LR1":35000,"LR2":75000},"ras_tanura":{"MR":20000,"LR1":25000,"LR2":30000},"rio_de_janeiro":{"MR":50000},"santos":{"MR":50000},"shanghai":{"MR":25000,"LR1":40000,"LR2":55000},"singapore":{"MR":22500,"LR1":25000,"LR2":30000},"suape":{"MR":60000,"LR1":75000,"LR2":110000},"suez":{"MR":50000},"visakhapatnam":{"MR":70000,"LR1":100000,"LR2":140000},"walvis_bay":{"MR":50000,"LR1":55000,"LR2":60000},"yanbu":{"MR":10000,"LR1":10000,"LR2":10000},"fremantle":{"MR":32500},"surabaya":{"MR":45000},"kaohsiung":{"MR":22500,"LR1":35000,"LR2":50000},"vancouver":{"LR2":180000},"tokyo":{"LR1":80000}};
-const CONSUMPTION_REF = {"AFRA":{"ballast":24.5,"laden":35,"idle":6,"load":10,"disch":42.5,"heating":0},"LR1":{"ballast":17,"laden":25,"idle":5,"load":6,"disch":30,"heating":0},"LR2":{"ballast":24.5,"laden":35,"idle":6,"load":10,"disch":42.5,"heating":0},"MR ECO":{"ballast":16,"laden":20,"idle":6,"load":8,"disch":19,"heating":0},"MR NORMAL":{"ballast":24,"laden":26,"idle":5,"load":5,"disch":15,"heating":0},"MR OLD":{"ballast":25,"laden":28,"idle":5,"load":5,"disch":25,"heating":0},"SUEZ":{"ballast":44,"laden":53,"idle":10,"load":12,"disch":68,"heating":0},"VLCC":{"ballast":53,"laden":70,"idle":10,"load":20,"disch":110,"heating":0},"SUEZ S ECO":{"ballast":24.5,"laden":30,"idle":5,"load":6,"disch":7,"heating":0},"SUEZ 2025":{"ballast":28.7,"laden":41.9,"idle":8,"load":20,"disch":80,"heating":0}};
+const CONSUMPTION_REF = {"HANDY":{"ballast":15,"laden":17,"idle":3,"load":3,"disch":8,"heating":0},"MR1":{"ballast":20,"laden":22,"idle":4,"load":4,"disch":12,"heating":0},"AFRA":{"ballast":24.5,"laden":35,"idle":6,"load":10,"disch":42.5,"heating":0},"LR1":{"ballast":17,"laden":25,"idle":5,"load":6,"disch":30,"heating":0},"LR2":{"ballast":24.5,"laden":35,"idle":6,"load":10,"disch":42.5,"heating":0},"MR ECO":{"ballast":16,"laden":20,"idle":6,"load":8,"disch":19,"heating":0},"MR NORMAL":{"ballast":24,"laden":26,"idle":5,"load":5,"disch":15,"heating":0},"MR OLD":{"ballast":25,"laden":28,"idle":5,"load":5,"disch":25,"heating":0},"SUEZ":{"ballast":44,"laden":53,"idle":10,"load":12,"disch":68,"heating":0},"VLCC":{"ballast":53,"laden":70,"idle":10,"load":20,"disch":110,"heating":0},"SUEZ S ECO":{"ballast":24.5,"laden":30,"idle":5,"load":6,"disch":7,"heating":0},"SUEZ 2025":{"ballast":28.7,"laden":41.9,"idle":8,"load":20,"disch":80,"heating":0}};
 
 // Two categories, per Mr. Badar: "GHS Vessels" covers the whole fleet minus Pacific Adventure,
 // all confirmed by Captain Roy to share the same real speed-indexed consumption curve and to run
@@ -9230,6 +9221,17 @@ const SPOT_VESSEL_CURVES = {
 const VESSEL_REF = {
   "GHS": { mainFuel:"HSFO", sizeClass:"MR", hasRealCurve:true },
   "MR_OLD": { mainFuel:"VLSFO", sizeClass:"MR", consumClass:"MR OLD" },
+  // Size classes — typical/average figures (flat mt/day, not speed-indexed), placeholders to be
+  // refined. HANDY and MR1 are generic estimates; the rest come from CONSUMPTION_REF above.
+  // Fuel grade for a size class follows the Scrubber fitted tick box (ticked = HSFO, else VLSFO).
+  "HANDY":   { isClass:true, sizeClass:"HANDY", consumClass:"HANDY" },
+  "MR1":     { isClass:true, sizeClass:"MR",    consumClass:"MR1" },
+  "MR2":     { isClass:true, sizeClass:"MR",    consumClass:"MR NORMAL" },
+  "LR1":     { isClass:true, sizeClass:"LR1",   consumClass:"LR1" },
+  "LR2":     { isClass:true, sizeClass:"LR2",   consumClass:"LR2" },
+  "AFRAMAX": { isClass:true, sizeClass:"AFRA",  consumClass:"AFRA" },
+  "SUEZMAX": { isClass:true, sizeClass:"SUEZ",  consumClass:"SUEZ" },
+  "VLCC":    { isClass:true, sizeClass:"VLCC",  consumClass:"VLCC" },
   // Named spot vessels with their own S&C sheet on file — each overrides the shared GHS curve
   // with its own via the "curve" property. Fuel grade is taken from what each vessel's own sheet
   // states, per Mr. Amer, rather than being inferred from the Q88 scrubber entry.
@@ -9345,60 +9347,56 @@ let legOverrides = {};
 // (e.g. from sea-distances.org) and just want to plug it straight into the cost calculation.
 let manualOverrides = {};
 function pairKey(a,b){ return [a,b].sort().join('__'); }
-let drawing = null; // {legIndex, src, dst, points:[], markers:[], previewLine}
 
+// One voyage only: the rotation opens with three blank port calls for the user to fill in.
+// port:null = not chosen yet; blank rows are ignored by the calculation.
 let rotation = [
-  {port:"port_klang", callType:"Load", cargoPct:100, days:0, portDuty:0},
-  {port:"dumai", callType:"Load", cargoPct:100, days:0, portDuty:0},
-  {port:"aden", callType:"Discharge", cargoPct:100, days:0, portDuty:0},
-  {port:"djibouti", callType:"Discharge", cargoPct:100, days:0, portDuty:0},
+  {port:null, callType:"Load", cargoPct:100, days:0, portDuty:0},
+  {port:null, callType:"Discharge", cargoPct:100, days:0, portDuty:0},
+  {port:null, callType:"Discharge", cargoPct:100, days:0, portDuty:0},
 ];
-let startingPointPort = null; // resolved port_id of the fixed Starting Point row, or null if unset
-// Keyed by rotation index i (meaning: "after rotation[i], the vessel is empty — a Next Starting
-// Point marker goes here"). Absence of a key = default behavior (shown, auto-mirrors that
-// discharge port, zero extra cost). {removed:true} = hidden entirely for that boundary.
-// {port:'xyz'} = manually overridden to a real repositioning destination.
-let nextStartOverrides = {};
 
-// A voyage segment completes wherever cumulative cargo aboard returns to 0% after having been
-// loaded — a real, physical "fully discharged" point. Used identically by rendering (to place
-// the Next Starting Point marker) and by the cost calculation (to insert the matching leg), so
-// the two can never disagree about where a boundary is.
-function detectVoyageBoundaries(rot){
-  let cargoRunning = 0, sawCargo = false;
-  const boundaries = [];
-  rot.forEach((call,i)=>{
-    if(call.callType==='Load') cargoRunning = 1;
-    if(call.callType==='Discharge') cargoRunning = 0;
-    if(cargoRunning>0) sawCargo = true;
-    if(sawCargo && cargoRunning<0.005){
-      boundaries.push(i);
-      sawCargo = false;
-    }
-  });
-  return boundaries;
+// ---------- Refresh protection: inputs are kept in this browser for 5 minutes ----------
+// Everything typed is saved to localStorage as you go. Reloading the page within 5 minutes of
+// the last change brings it all back; after that the saved copy is discarded and the tool opens
+// fresh. Nothing is saved until the restore step at the end of start-up has run, so the start-up
+// defaults can never overwrite a saved estimate.
+var PERSIST_KEY = 'ghs_voyage_estimator_state_v1';
+var PERSIST_TTL_MS = 5*60*1000;
+var persistReady = false;
+var persistTimer = null;
+function saveState(){
+  if(!persistReady) return;
+  try{
+    const fields = {};
+    document.querySelectorAll('input[id], select[id]').forEach(el=>{
+      if(el.type==='date' || el.id==='allPortsDatalist') return;
+      fields[el.id] = (el.type==='checkbox') ? el.checked : el.value;
+    });
+    const cd = document.getElementById('consDetails');
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({
+      t: Date.now(), fields, rotation, manualOverrides,
+      consOpen: cd ? cd.open : false
+    }));
+  }catch(e){ /* storage unavailable — the tool still works, it just won't remember */ }
 }
+function queueSave(){ clearTimeout(persistTimer); persistTimer = setTimeout(saveState, 250); }
+function loadSavedState(){
+  try{
+    const raw = localStorage.getItem(PERSIST_KEY);
+    if(!raw) return null;
+    const st = JSON.parse(raw);
+    if(!st || !st.t || (Date.now()-st.t) > PERSIST_TTL_MS){ localStorage.removeItem(PERSIST_KEY); return null; }
+    return st;
+  }catch(e){ return null; }
+}
+function clearSavedState(){ try{ localStorage.removeItem(PERSIST_KEY); }catch(e){} }
 
 function renderRotation(){
   const tbody = document.getElementById('rotBody');
   tbody.innerHTML = '';
 
-  // ---- fixed Starting Point row (always present, not reorderable, port is optional) ----
-  const startTr = document.createElement('tr');
-  startTr.style.background = 'rgba(47,143,138,0.06)';
-  const startName = startingPointPort && NODES[startingPointPort] ? NODES[startingPointPort].name : '';
-  startTr.innerHTML = `
-    <td style="font-family:'SFMono-Regular',Consolas,monospace; color:var(--text-mute);">—</td>
-    <td><input type="text" id="startingPointInput" list="allPortsDatalist" value="${startName}" autocomplete="off" placeholder="Where is the vessel now? (optional)"></td>
-    <td><span class="badge boundary">Starting Point</span></td>
-    <td style="color:var(--text-mute); text-align:center;">—</td>
-    <td style="color:var(--text-mute); text-align:center;">—</td>
-    <td class="rowbtns">${startName ? `<button class="iconbtn danger" id="clearStartingPoint" title="Clear">✕</button>` : ''}</td>`;
-  tbody.appendChild(startTr);
-
-  // ---- normal Load/Discharge rotation rows, with a Next Starting Point marker at every
-  // voyage boundary (not just a single fixed one) ----
-  const boundaries = detectVoyageBoundaries(rotation);
+  // ---- Load/Discharge rotation rows (one voyage) ----
   rotation.forEach((call, i)=>{
     const tr = document.createElement('tr');
     const currentName = NODES[call.port] ? NODES[call.port].name : '';
@@ -9416,47 +9414,14 @@ function renderRotation(){
             <option value="Bunkering" ${call.callType==='Bunkering'?'selected':''}>Bunkering</option>
             <option value="OwnersMatter" ${call.callType==='OwnersMatter'?'selected':''}>Owners Matter</option>
           </select></td>
-      <td><input type="number" data-i="${i}" class="daysInp" value="${call.days}" step="0.5" min="0"></td>
-      <td><input type="number" data-i="${i}" class="portDutyInp" value="${call.portDuty||0}" step="100" min="0"></td>
+      <td><input type="number" data-i="${i}" class="daysInp" value="${call.days||''}" placeholder="0" step="0.5" min="0"></td>
+      <td><input type="number" data-i="${i}" class="portDutyInp" value="${call.portDuty||''}" placeholder="0" step="100" min="0"></td>
       <td class="rowbtns">
         <button class="iconbtn moveUp" data-i="${i}" title="Move up">↑</button>
         <button class="iconbtn moveDown" data-i="${i}" title="Move down">↓</button>
         <button class="iconbtn danger removeRow" data-i="${i}" title="Remove">✕</button>
       </td>`;
     tbody.appendChild(tr);
-
-    if(boundaries.includes(i)){
-      const ov = nextStartOverrides[i];
-      if(ov && ov.removed){
-        const restoreTr = document.createElement('tr');
-        restoreTr.innerHTML = `<td colspan="6" style="text-align:center; padding:5px 0;">
-          <button class="addrow restoreBoundaryBtn" data-i="${i}" style="font-size:11px; padding:4px 10px;">+ Add Next Starting Point after ${currentName}</button>
-        </td>`;
-        tbody.appendChild(restoreTr);
-      } else {
-        const isManual = ov && ov.port;
-        const effectivePort = isManual ? ov.port : call.port;
-        const effectiveName = NODES[effectivePort] ? NODES[effectivePort].name : '';
-        const markerTr = document.createElement('tr');
-        markerTr.style.background = 'rgba(47,143,138,0.06)';
-        markerTr.innerHTML = `
-          <td colspan="6" style="text-align:center; padding:4px 0; border-top:2px dashed var(--strait); font-family:'SFMono-Regular',Consolas,monospace; font-size:10.5px; color:var(--strait); letter-spacing:0.4px;">⚓ Fully discharged at ${currentName} — voyage complete here</td>`;
-        tbody.appendChild(markerTr);
-        const nextTr = document.createElement('tr');
-        nextTr.style.background = 'rgba(47,143,138,0.06)';
-        nextTr.innerHTML = `
-          <td style="font-family:'SFMono-Regular',Consolas,monospace; color:var(--text-mute);">—</td>
-          <td><input type="text" class="nextStartInput" data-bi="${i}" list="allPortsDatalist" value="${effectiveName}" autocomplete="off" placeholder="Repositioning from here (optional)"></td>
-          <td><span class="badge boundary">Next Starting Point</span></td>
-          <td style="color:var(--text-mute); text-align:center;">—</td>
-          <td style="color:var(--text-mute); text-align:center;">—</td>
-          <td class="rowbtns">
-            ${isManual ? `<button class="iconbtn resetNextStartBtn" data-bi="${i}" title="Reset to match this discharge port">⟲</button>` : ''}
-            <button class="iconbtn danger removeNextStartBtn" data-bi="${i}" title="Remove this marker">✕</button>
-          </td>`;
-        tbody.appendChild(nextTr);
-      }
-    }
   });
 
   // ---- searchable port combobox: filter-as-you-type, grouped by region (normal rows only) ----
@@ -9487,7 +9452,6 @@ function renderRotation(){
         const idx = +opt.dataset.i;
         rotation[idx].port = opt.dataset.id;
         suggestPortDutyForRow(idx);
-        populateLegPicker();
         renderRotation();
         applyFreightSuggestion();
       };
@@ -9497,51 +9461,27 @@ function renderRotation(){
     const i = +inp.dataset.i;
     const listEl = tbody.querySelector(`.portSearchList[data-i="${i}"]`);
     inp.addEventListener('focus', ()=>renderSuggestions(listEl, '', i));
-    inp.addEventListener('input', ()=>renderSuggestions(listEl, inp.value, i));
+    inp.addEventListener('input', ()=>{
+      // Deleting the text clears the port straight away, so the row really is blank again
+      // (and its auto-filled port duty goes with it) even if Calculate is pressed right after.
+      if(inp.value.trim()==='' && rotation[i].port){
+        rotation[i].port = null;
+        rotation[i].portDuty = 0;
+        const dutyInp = tbody.querySelector(`.portDutyInp[data-i="${i}"]`);
+        if(dutyInp) dutyInp.value = '';
+        applyFreightSuggestion();
+      }
+      renderSuggestions(listEl, inp.value, i);
+    });
     inp.addEventListener('blur', ()=>{
       setTimeout(()=>{ // allow onmousedown above to fire first
+        if(!inp.isConnected) return; // a port was picked and the table re-rendered
         listEl.style.display = 'none';
-        // revert to the currently selected port's real name if what's typed doesn't match anything valid
+        // revert to the currently selected port's real name if what's typed doesn't match anything
+        // valid — or leave it blank if no port is selected
         inp.value = NODES[rotation[i].port] ? NODES[rotation[i].port].name : '';
       }, 120);
     });
-  });
-
-  // ---- Starting Point row wiring ----
-  const startInput = document.getElementById('startingPointInput');
-  startInput.addEventListener('change', function(){
-    const typed = this.value.trim();
-    if(!typed){ startingPointPort = null; renderRotation(); runCalc(); return; }
-    const match = Object.keys(NODES).find(id=>NODES[id].type==='port' && NODES[id].name===typed);
-    if(match){ startingPointPort = match; renderRotation(); runCalc(); }
-    else this.style.borderColor = 'var(--disch)'; // not a recognized port name — leave as typed, don't clear
-  });
-  const clearStartBtn = document.getElementById('clearStartingPoint');
-  if(clearStartBtn) clearStartBtn.onclick = ()=>{ startingPointPort = null; renderRotation(); runCalc(); };
-
-  // ---- Next Starting Point marker wiring (one set of listeners covers every boundary present) ----
-  tbody.querySelectorAll('.nextStartInput').forEach(inp=>{
-    inp.addEventListener('change', function(){
-      const bi = +this.dataset.bi;
-      const typed = this.value.trim();
-      const match = Object.keys(NODES).find(id=>NODES[id].type==='port' && NODES[id].name===typed);
-      if(match){
-        nextStartOverrides[bi] = (match === rotation[bi].port) ? undefined : {port: match};
-        if(nextStartOverrides[bi]===undefined) delete nextStartOverrides[bi];
-        renderRotation(); runCalc();
-      } else {
-        this.style.borderColor = 'var(--disch)';
-      }
-    });
-  });
-  tbody.querySelectorAll('.resetNextStartBtn').forEach(btn=>{
-    btn.onclick = ()=>{ delete nextStartOverrides[+btn.dataset.bi]; renderRotation(); runCalc(); };
-  });
-  tbody.querySelectorAll('.removeNextStartBtn').forEach(btn=>{
-    btn.onclick = ()=>{ nextStartOverrides[+btn.dataset.bi] = {removed:true}; renderRotation(); runCalc(); };
-  });
-  tbody.querySelectorAll('.restoreBoundaryBtn').forEach(btn=>{
-    btn.onclick = ()=>{ delete nextStartOverrides[+btn.dataset.i]; renderRotation(); runCalc(); };
   });
 
   tbody.querySelectorAll('.typeSel').forEach(el=>el.onchange = e=>{ rotation[+e.target.dataset.i].callType = e.target.value; applyFreightSuggestion(); renderRotation(); runCalc(); });
@@ -9557,57 +9497,13 @@ function renderRotation(){
     const i=+e.target.dataset.i; if(rotation.length>2){ rotation.splice(i,1); renderRotation(); }
     else alert('A voyage needs at least two port calls.');
   });
-  if(typeof populateLegPicker === 'function') populateLegPicker();
+  queueSave();
 }
 document.getElementById('addRow').onclick = ()=>{
-  const last = rotation[rotation.length-1];
-  rotation.push({port:last.port, callType:"Discharge", cargoPct:0, days:0, portDuty:0});
+  rotation.push({port:null, callType:"Discharge", cargoPct:0, days:0, portDuty:0});
   renderRotation();
 };
 renderRotation();
-
-// ---------- Bunker prices: benchmark + premium ----------
-// The benchmark is typed in from a published source (Ship & Bunker publishes Singapore prices
-// free each business day). The premium is your own spread to it — barging, supplier margin,
-// stem size, contract terms — so the figure the estimate actually uses is benchmark + premium.
-// The price fields are read-only on purpose: editing them directly would silently break the
-// link to the benchmark, and you would not be able to see which number was stale.
-const FUELS = ['hsfo','vlsfo','lsmgo'];
-const priceDateEl = document.getElementById('priceDate');
-const priceAgeEl  = document.getElementById('priceAge');
-
-function todayISO(){
-  const d = new Date();
-  return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
-}
-
-function applyPremiums(){
-  FUELS.forEach(f=>{
-    const bm   = parseFloat(document.getElementById('bm_'+f).value)||0;
-    const prem = parseFloat(document.getElementById('prem_'+f).value)||0;
-    document.getElementById('p_'+f).value = (bm + prem).toFixed(2);
-  });
-}
-
-function refreshPriceAge(){
-  const v = priceDateEl.value;
-  if(!v){ priceAgeEl.textContent = 'Enter the benchmark prices, then set the date they were taken.'; priceAgeEl.style.color=''; return; }
-  const days = Math.floor((new Date(todayISO()) - new Date(v)) / 86400000);
-  if(days < 0){        priceAgeEl.textContent = 'That date is in the future — check it.'; priceAgeEl.style.color='#a5342f'; }
-  else if(days === 0){ priceAgeEl.textContent = 'Benchmark entered today.'; priceAgeEl.style.color=''; }
-  else if(days === 1){ priceAgeEl.textContent = 'Benchmark is 1 day old.'; priceAgeEl.style.color=''; }
-  else if(days <= 4){  priceAgeEl.textContent = `Benchmark is ${days} days old.`; priceAgeEl.style.color=''; }
-  else {               priceAgeEl.textContent = `Benchmark is ${days} days old — worth refreshing before you quote.`; priceAgeEl.style.color='#a5342f'; }
-}
-
-FUELS.forEach(f=>{
-  document.getElementById('bm_'+f).addEventListener('input', ()=>{ applyPremiums(); });
-  document.getElementById('bm_'+f).addEventListener('change', ()=>{ priceDateEl.value = todayISO(); refreshPriceAge(); });
-  document.getElementById('prem_'+f).addEventListener('input', applyPremiums);
-});
-priceDateEl.addEventListener('change', refreshPriceAge);
-applyPremiums();
-refreshPriceAge();
 
 // ---------- Map (nautical basemap, tailored for tracing sea routes) ----------
 const map = L.map('map', {scrollWheelZoom:true}).setView([15,60],3);
@@ -9639,111 +9535,7 @@ L.control.layers(
 L.control.scale({imperial:false, maxWidth:150}).addTo(map);
 
 let routeLayer = L.layerGroup().addTo(map);
-let drawLayer = L.layerGroup().addTo(map);
 
-function populateLegPicker(){
-  const sel = document.getElementById('legPicker');
-  sel.innerHTML = '';
-  for(let i=0;i<rotation.length-1;i++){
-    const src = rotation[i].port, dst = rotation[i+1].port;
-    const key = pairKey(src,dst);
-    const tag = legOverrides[key] ? ' [manual]' : ' [auto]';
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = `Leg ${i+1}: ${NODES[src].name} → ${NODES[dst].name}${tag}`;
-    sel.appendChild(opt);
-  }
-}
-
-function startDrawing(legIndex){
-  const src = rotation[legIndex].port, dst = rotation[legIndex+1].port;
-  if(src===dst){ alert('This leg starts and ends at the same port.'); return; }
-  drawing = { legIndex, src, dst, points: [], markers: [] };
-  drawLayer.clearLayers();
-  document.getElementById('drawStatus').classList.add('active');
-  document.getElementById('drawInstr').textContent = `Drawing ${NODES[src].name} → ${NODES[dst].name}. Click points along the route.`;
-  L.circleMarker([NODES[src].lat,NODES[src].lon], {radius:8,color:'#0f2436',fillColor:'#3a7d44',fillOpacity:1,weight:2})
-    .bindTooltip(NODES[src].name + ' (start)', {permanent:true, direction:'top'}).addTo(drawLayer);
-  L.circleMarker([NODES[dst].lat,NODES[dst].lon], {radius:8,color:'#0f2436',fillColor:'#a5342f',fillOpacity:1,weight:2})
-    .bindTooltip(NODES[dst].name + ' (end)', {permanent:true, direction:'top'}).addTo(drawLayer);
-  updateDrawPreview();
-  map.on('click', onMapClickDraw);
-}
-
-function onMapClickDraw(e){
-  if(!drawing) return;
-  const pt = {lat:e.latlng.lat, lon:e.latlng.lng};
-  drawing.points.push(pt);
-  const marker = L.circleMarker([pt.lat,pt.lon], {radius:5,color:'#0f2436',fillColor:'#2f8f8a',fillOpacity:1,weight:2})
-    .addTo(drawLayer);
-  drawing.markers.push(marker);
-  updateDrawPreview();
-}
-
-function assembleDrawPath(){
-  const src = NODES[drawing.src], dst = NODES[drawing.dst];
-  return [{lat:src.lat,lon:src.lon}, ...drawing.points, {lat:dst.lat,lon:dst.lon}];
-}
-
-function updateDrawPreview(){
-  if(drawing.previewLine){ drawLayer.removeLayer(drawing.previewLine); }
-  const full = assembleDrawPath();
-  drawing.previewLine = L.polyline(full.map(p=>[p.lat,p.lon]), {color:'#d9791f', weight:3, dashArray:'6,5'}).addTo(drawLayer);
-  let total = 0;
-  for(let i=0;i<full.length-1;i++) total += haversineNM(full[i], full[i+1]);
-  document.getElementById('drawCount').textContent = drawing.points.length;
-  document.getElementById('drawDist').textContent = total.toLocaleString(undefined,{maximumFractionDigits:0});
-}
-
-document.getElementById('startDraw').onclick = ()=>{
-  const i = parseInt(document.getElementById('legPicker').value);
-  startDrawing(i);
-};
-document.getElementById('openMarineTraffic').onclick = ()=>{
-  const i = parseInt(document.getElementById('legPicker').value);
-  const src = rotation[i].port, dst = rotation[i+1].port;
-  const a = NODES[src], b = NODES[dst];
-  const midLat = ((a.lat + b.lat) / 2).toFixed(4);
-  const midLon = ((a.lon + b.lon) / 2).toFixed(4);
-  // rough zoom guess: closer ports -> zoom in more, distant legs -> zoom out
-  const spread = Math.max(Math.abs(a.lat-b.lat), Math.abs(a.lon-b.lon));
-  const zoom = spread < 2 ? 9 : spread < 8 ? 6 : spread < 25 ? 4 : 3;
-  const url = `https://www.marinetraffic.com/en/ais/home/centerx:${midLon}/centery:${midLat}/zoom:${zoom}`;
-  window.open(url, '_blank');
-};
-document.getElementById('undoPoint').onclick = ()=>{
-  if(!drawing || drawing.points.length===0) return;
-  drawing.points.pop();
-  const m = drawing.markers.pop();
-  drawLayer.removeLayer(m);
-  updateDrawPreview();
-};
-document.getElementById('clearPoints').onclick = ()=>{
-  if(!drawing) return;
-  drawing.points = [];
-  drawing.markers.forEach(m=>drawLayer.removeLayer(m));
-  drawing.markers = [];
-  updateDrawPreview();
-};
-document.getElementById('cancelDraw').onclick = ()=>{
-  if(!drawing) return;
-  map.off('click', onMapClickDraw);
-  drawLayer.clearLayers();
-  document.getElementById('drawStatus').classList.remove('active');
-  drawing = null;
-};
-document.getElementById('finishDraw').onclick = ()=>{
-  if(!drawing) return;
-  const full = assembleDrawPath();
-  const key = pairKey(drawing.src, drawing.dst);
-  legOverrides[key] = { aId: drawing.src, bId: drawing.dst, points: full };
-  map.off('click', onMapClickDraw);
-  drawLayer.clearLayers();
-  document.getElementById('drawStatus').classList.remove('active');
-  drawing = null;
-  populateLegPicker();
-  runCalc();
-};
 
 function fmt(n,d=0){ return n.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d}); }
 function money(n){ return (n<0?'-$':'$')+fmt(Math.abs(n),0); }
@@ -9752,12 +9544,13 @@ function runCalc(){
   const resultsArea = document.getElementById('resultsArea');
   routeLayer.clearLayers();
 
-  if(rotation.length<2){ resultsArea.innerHTML='<div class="placeholder">Add at least two port calls.</div>'; return; }
+  // Blank rows (no port chosen yet) are simply skipped.
+  const calls = rotation.filter(c=>c.port && NODES[c.port]);
+  if(calls.length<2){ resultsArea.innerHTML='<div class="placeholder">Enter at least two ports in the Port Rotation, then hit Calculate Voyage.</div>'; queueSave(); return; }
 
-  const distAdjPct = parseFloat(document.getElementById('dist_adj').value)||0;
   const avoidSuezPref = document.getElementById('avoid_suez').checked;
   const avoidPiracyPref = document.getElementById('avoid_piracy').checked;
-  const distAdjFactor = 1 + (distAdjPct/100);
+  const distAdjFactor = 1;
 
   // compute legs (using manual overrides where drawn, otherwise real-network routing)
   let legs = [];
@@ -9765,27 +9558,9 @@ function runCalc(){
   let totalNM = 0;
   let feasible = true;
 
-  // Build the full call sequence: fixed Starting Point, the rotation (with a repositioning leg
-  // inserted at every voyage boundary that has been given a real, different destination), then
-  // cargo fraction is tracked straight through. The vessel starts empty; each Load fills it,
-  // each Discharge empties it.
-  const voyageBoundaries = detectVoyageBoundaries(rotation);
-  let callSequence = [];
-  rotation.forEach((c,i)=>{
-    callSequence.push({port:c.port, callType:c.callType});
-    if(voyageBoundaries.includes(i)){
-      const ov = nextStartOverrides[i];
-      if(!(ov && ov.removed)){
-        const effectivePort = (ov && ov.port) ? ov.port : c.port;
-        if(effectivePort !== c.port){
-          callSequence.push({port:effectivePort, callType:'NextStart'});
-        }
-      }
-    }
-  });
-  if(startingPointPort && startingPointPort !== callSequence[0].port){
-    callSequence = [{port:startingPointPort, callType:'Start'}].concat(callSequence);
-  }
+  // One voyage: the call sequence is simply the filled-in port calls, in order. The vessel starts
+  // empty; each Load fills it, each Discharge empties it.
+  const callSequence = calls.map(c=>({port:c.port, callType:c.callType}));
   let cargoFraction = 0;
   const fractionAtDeparture = callSequence.map(c=>{
     if(c.callType==='Load') cargoFraction = 1;
@@ -9800,7 +9575,7 @@ function runCalc(){
     if(src===dst){ legs.push({from:src, to:dst, nm:0, gc:0, mode:'auto', cargoFrac}); mapSegments.push([{lat:NODES[src].lat,lon:NODES[src].lon}]); continue; }
     const key = pairKey(src,dst);
     if(key in manualOverrides){
-      // manual override is already the user's known-correct number — never scaled by the adjustment %
+      // manual override is already the user's known-correct number
       const nm = manualOverrides[key];
       legs.push({from:src, to:dst, nm, gc, mode:'override', cargoFrac});
       mapSegments.push([{lat:NODES[src].lat,lon:NODES[src].lon},{lat:NODES[dst].lat,lon:NODES[dst].lon}]);
@@ -9853,7 +9628,7 @@ function runCalc(){
                       LSMGO: parseFloat(document.getElementById('cp_lsmgo_disch').value)||0 };
 
   const seaDays = legs.reduce((s,l)=>s+l.nm/speed/24, 0);
-  const portDays = rotation.reduce((s,c)=>s+(c.days||0),0);
+  const portDays = calls.reduce((s,c)=>s+(c.days||0),0);
   const totalDays = seaDays + portDays;
 
   const hireCost = hireRate*totalDays;
@@ -9873,28 +9648,18 @@ function runCalc(){
   // Each port call uses its own Loading or Discharging consumption rate — not one blended figure.
   // Bunkering / Owners Matter calls aren't cargo operations, so default to the Loading rate (lower
   // activity than active discharge, a reasonable proxy in the absence of dedicated figures).
-  rotation.forEach(call=>{
+  calls.forEach(call=>{
     const rate = call.callType === 'Discharge' ? portConsDisch : portConsLoad;
     ["HSFO","VLSFO","LSMGO"].forEach(f=>{
       fuelMtByType[f] += (call.days||0)*rate[f];
       fuelCostByType[f] += (call.days||0)*rate[f]*price[f];
     });
   });
-  // Cargo heating: a single lump of boiler fuel for the whole voyage, NOT a per-day rate, which is
-  // how the Budget Computation workbook treats it. Off by default because CPP is carried at ambient
-  // temperature and needs no heat — it is DPP, vegoils and FAME/biodiesel that do. Charged against
-  // whichever grade the vessel burns at sea, since that is what feeds the boiler.
-  const heatOn = document.getElementById('heat_on').checked;
-  const heatMt = heatOn ? (parseFloat(document.getElementById('heat_mt').value)||0) : 0;
-  const heatGrade = (seaConsLaden.HSFO>0 || seaConsBallast.HSFO>0) ? 'HSFO' : 'VLSFO';
-  if(heatMt>0){
-    fuelMtByType[heatGrade] += heatMt;
-    fuelCostByType[heatGrade] += heatMt*price[heatGrade];
-  }
   let bunkerTotal = fuelCostByType.HSFO + fuelCostByType.VLSFO + fuelCostByType.LSMGO;
+  const missingPrices = ["HSFO","VLSFO","LSMGO"].filter(f=>fuelMtByType[f]>0.05 && !(price[f]>0));
   // Port Duty = GT x rate (USD/GT/day) x days spent, applied per port call then summed
   // Port Duty is entered manually per port call (see the rotation table) — just sum it here
-  const portDutyByCall = rotation.map(c => c.portDuty||0);
+  const portDutyByCall = calls.map(c => c.portDuty||0);
   const portDutyTotal = portDutyByCall.reduce((s,v)=>s+v, 0);
 
   const totalCost = hireCost + bunkerTotal + otherCosts + portDutyTotal;
@@ -9918,7 +9683,7 @@ function runCalc(){
   L.polyline(latlngs, {color:'#d9791f', weight:3.5, opacity:0.9}).addTo(routeLayer);
 
   function findCallAt(p){
-    return rotation.find(c=>{
+    return calls.find(c=>{
       const n = NODES[c.port];
       return Math.abs(n.lat-p.lat)<0.01 && Math.abs(n.lon-p.lon)<0.01;
     });
@@ -9956,18 +9721,20 @@ function runCalc(){
   // ---- port days table ----
   const callTypeBadgeClass = {Load:'load', Discharge:'disch', Bunkering:'boundary', OwnersMatter:'ballast'};
   const callTypeLabel = {Load:'Load', Discharge:'Discharge', Bunkering:'Bunkering', OwnersMatter:'Owners Matter'};
-  let portHtml = rotation.map((c,i)=>`<tr><td><span class="badge ${callTypeBadgeClass[c.callType]||'disch'}">${callTypeLabel[c.callType]||c.callType}</span> ${NODES[c.port].name}</td><td class="num">${fmt(c.days,2)}</td><td class="num">${money(portDutyByCall[i])}</td></tr>`).join('');
+  let portHtml = calls.map((c,i)=>`<tr><td><span class="badge ${callTypeBadgeClass[c.callType]||'disch'}">${callTypeLabel[c.callType]||c.callType}</span> ${NODES[c.port].name}</td><td class="num">${fmt(c.days,2)}</td><td class="num">${money(portDutyByCall[i])}</td></tr>`).join('');
 
   resultsArea.innerHTML = `
+    ${missingPrices.length ? `<div style="background:#f3d9d6; color:#a5342f; border:1px solid #a5342f; border-radius:5px; padding:8px 12px; margin-bottom:12px; font-size:13px;">No bunker price entered for <b>${missingPrices.join(', ')}</b> — that fuel is being costed at $0. Fill it in under Bunker Details.</div>` : ''}
     <div class="stat-row">
       <div class="stat"><div class="n">${fmt(totalNM)}</div><div class="l">Total NM</div></div>
       <div class="stat"><div class="n">${fmt(totalDays,1)}</div><div class="l">Total Voyage Days</div></div>
-      <div class="stat hero"><div class="n">${money(totalCost)}</div><div class="l">Total Voyage Cost</div></div>
-      <div class="stat"><div class="n">${money(totalCost/totalDays)}</div><div class="l">Cost / Day</div></div>
+      <div class="stat"><div class="n">${money(totalCost)}</div><div class="l">Total Voyage Cost</div></div>
+      <div class="stat"><div class="n">${totalDays>0 ? money(totalCost/totalDays) : '—'}</div><div class="l">Cost / Day</div></div>
       <div class="stat"><div class="n">${costPerTonne!==null ? '$'+fmt(costPerTonne,2) : '—'}</div><div class="l">Cost / Tonne (Cargo)</div></div>
-      <div class="stat"><div class="n">${money(freightRevenue)}</div><div class="l">Freight Revenue (net of commission)</div></div>
-      <div class="stat hero" style="${voyageProfit<0?'color:#a5342f;':''}"><div class="n">${money(voyageProfit)}</div><div class="l">Voyage Profit</div></div>
-      <div class="stat" style="${tce!==null && tce<0?'color:#a5342f;':''}"><div class="n">${tce!==null ? money(tce) : '—'}</div><div class="l">TCE (USD/day)</div></div>
+    </div>
+    <div class="stat-row bottom">
+      <div class="stat hero${voyageProfit<0?' neg':''}"><div class="n">${money(voyageProfit)}</div><div class="l">Voyage Profit</div></div>
+      <div class="stat hero${tce!==null && tce<0?' neg':''}"><div class="n">${tce!==null ? money(tce) : '—'}</div><div class="l">TCE (USD/day)</div></div>
     </div>
     <div class="cols">
       <div>
@@ -9977,8 +9744,7 @@ function runCalc(){
             <tr class="total"><td>Total Sailing</td><td class="num"></td><td class="num">${fmt(totalNM)}</td><td class="num"></td><td class="num">${fmt(seaDays,2)}</td><td></td></tr>
           </tbody>
         </table>
-        <p class="note" style="margin-top:6px; color:var(--text-mute);">Great Circle = straight-line (haversine) distance. Routed = what actually feeds the cost calculation, whether auto-routed, hand-drawn, or manually overridden (manual overrides are not affected by the Distance Adjustment %). Detour % shows how much longer the real sea route is than a straight line — a sanity check against land/chokepoint routing.
-        ${distAdjPct !== 0 ? `<br><b style="color:var(--route);">Distance Adjustment of ${distAdjPct>0?'+':''}${distAdjPct}% is currently applied</b> to all auto-routed and hand-drawn legs above.` : ''}</p>
+        <p class="note" style="margin-top:6px; color:var(--text-mute);">Great Circle = straight-line (haversine) distance. Routed = what actually feeds the cost calculation, whether auto-routed or manually overridden. Detour % shows how much longer the real sea route is than a straight line — a sanity check against land/chokepoint routing.</p>
         <table class="breakdown" style="margin-top:14px;">
           <thead><tr><th>Port Calls</th><th class="num">Days</th><th class="num">Port Duty</th></tr></thead>
           <tbody>${portHtml}
@@ -9994,7 +9760,6 @@ function runCalc(){
             <tr><td>HSFO (${fmt(fuelMtByType.HSFO,1)} mt × ${money(price.HSFO)}/mt)</td><td class="num">${money(fuelCostByType.HSFO)}</td></tr>
             <tr><td>VLSFO (${fmt(fuelMtByType.VLSFO,1)} mt × ${money(price.VLSFO)}/mt)</td><td class="num">${money(fuelCostByType.VLSFO)}</td></tr>
             <tr><td>LSMGO (${fmt(fuelMtByType.LSMGO,1)} mt × ${money(price.LSMGO)}/mt)</td><td class="num">${money(fuelCostByType.LSMGO)}</td></tr>
-            ${heatMt>0 ? `<tr><td style="padding-left:14px; color:var(--text-mute);">&#8627; of which cargo heating (${fmt(heatMt,0)} mt ${heatGrade}, flat per voyage)</td><td class="num" style="color:var(--text-mute);">${money(heatMt*price[heatGrade])}</td></tr>` : ''}
             <tr><td>Port Duty (sum of amounts entered per port call)</td><td class="num">${money(portDutyTotal)}</td></tr>
             <tr><td>Other Costs</td><td class="num">${money(otherCosts)}</td></tr>
             <tr class="total"><td>TOTAL VOYAGE COST</td><td class="num">${money(totalCost)}</td></tr>
@@ -10022,15 +9787,10 @@ function runCalc(){
       runCalc();
     };
   });
+  queueSave();
 }
 
 document.getElementById('calc').onclick = runCalc;
-// The heating toggle recalculates on the spot — a checkbox that appears to do nothing until the
-// Calculate button is pressed reads as broken.
-document.getElementById('heat_on').addEventListener('change', runCalc);
-document.getElementById('heat_mt').addEventListener('input', ()=>{
-  if(document.getElementById('heat_on').checked) runCalc();
-});
 function updateFreightBasisUI(){
   const basis = document.getElementById('freight_basis').value;
   document.getElementById('freight_value_label').textContent =
@@ -10076,8 +9836,9 @@ function applyPortDutySuggestions(){
 function applyFreightSuggestion(){
   const note = document.getElementById('freight_suggest_note');
   const wsNote = document.getElementById('ws_flatrate_note');
-  const loadCall = rotation.find(c=>c.callType==='Load');
-  const dischCalls = rotation.filter(c=>c.callType==='Discharge');
+  const filled = rotation.filter(c=>c.port && NODES[c.port]);
+  const loadCall = filled.find(c=>c.callType==='Load');
+  const dischCalls = filled.filter(c=>c.callType==='Discharge');
   if(!loadCall || dischCalls.length===0 || loadCall.port===dischCalls[dischCalls.length-1].port){
     note.textContent = '';
     return;
@@ -10095,9 +9856,22 @@ function applyFreightSuggestion(){
   note.textContent = '';
   wsNote.textContent = 'Flat rate suggested from on-file market data for this pair (WS100 basis) — edit freely, and set the actual WS points quoted.';
 }
+// Fuel grade the vessel burns: Scrubber fitted ticked = HSFO, unticked = VLSFO.
+function mainFuel(){ return document.getElementById('scrubber').checked ? 'HSFO' : 'VLSFO'; }
+function updateFuelGradeNote(){
+  document.getElementById('fuelGradeNote').textContent = 'Main fuel: ' + mainFuel();
+}
+// Named vessels carry their own grade from their S&C sheet — selecting one sets the tick box to
+// match (still changeable). Size classes leave the tick box as the user set it.
+function syncScrubberFromVessel(){
+  const vref = VESSEL_REF[document.getElementById('vessel_type').value];
+  if(vref && vref.mainFuel) document.getElementById('scrubber').checked = (vref.mainFuel === 'HSFO');
+  updateFuelGradeNote();
+}
 function applyVesselConsumption(){
   const vref = VESSEL_REF[document.getElementById('vessel_type').value];
   const speed = parseFloat(document.getElementById('speed').value)||12;
+  updateFuelGradeNote();
   if(!vref) return;
   if(vref.hasRealCurve){
     // Real speed-indexed consumption figures, interpolated at the current voyage Speed — not a
@@ -10107,7 +9881,7 @@ function applyVesselConsumption(){
     const curve = vref.curve || STANDARD_MR_CURVE;
     const ballastTotal = interpolateCurve(curve.ballast, speed);
     const ladenTotal = interpolateCurve(curve.laden, speed);
-    if(vref.mainFuel === 'HSFO'){
+    if(mainFuel() === 'HSFO'){
       document.getElementById('cs_hsfo_ballast').value = Math.round(ballastTotal*10)/10;
       document.getElementById('cs_hsfo_laden').value = Math.round(ladenTotal*10)/10;
       document.getElementById('cp_hsfo_load').value = curve.portLoading;
@@ -10145,7 +9919,11 @@ function applyVesselConsumption(){
     // Populate whichever fuel this vessel actually burns (per its own Q88), and zero the other —
     // scrubber-fitted vessels run cheaper high-sulphur HSFO legally; a vessel with no scrubber
     // confirmed must run compliant low-sulphur VLSFO instead.
-    if(vref.mainFuel === 'HSFO'){
+    document.getElementById('cs_lsmgo_ballast').value = 0;
+    document.getElementById('cs_lsmgo_laden').value = 0;
+    document.getElementById('cp_lsmgo_load').value = 0;
+    document.getElementById('cp_lsmgo_disch').value = 0;
+    if(mainFuel() === 'HSFO'){
       document.getElementById('cs_hsfo_ballast').value = cref.ballast||0;
       document.getElementById('cs_hsfo_laden').value = cref.laden||0;
       document.getElementById('cp_hsfo_load').value = cref.load||0;
@@ -10166,13 +9944,19 @@ function applyVesselConsumption(){
     }
   }
 }
+function updateVesselNameField(){
+  const vref = VESSEL_REF[document.getElementById('vessel_type').value];
+  document.getElementById('spot_name_wrap').style.display = (vref && vref.isClass) ? '' : 'none';
+}
 document.getElementById('vessel_type').addEventListener('change', function(){
-  document.getElementById('spot_name_wrap').style.display = this.value === '' ? '' : 'none';
+  updateVesselNameField();
+  syncScrubberFromVessel();
   applyVesselConsumption();
   applyPortDutySuggestions();
   applyFreightSuggestion();
 });
 document.getElementById('speed').addEventListener('change', applyVesselConsumption);
+document.getElementById('scrubber').addEventListener('change', applyVesselConsumption);
 
 // Populate the shared datalist used by the Starting Point / Next Starting Point row pickers
 (function(){
@@ -10189,10 +9973,48 @@ document.getElementById('speed').addEventListener('change', applyVesselConsumpti
 // page opened showing GHS selected next to the wrong fuel grade and the wrong numbers, and you had
 // to switch away and back to correct it. Applying the selection at startup makes what is displayed
 // match what is selected.
+syncScrubberFromVessel();
+updateVesselNameField();
 applyVesselConsumption();
 applyPortDutySuggestions();
 applyFreightSuggestion();
-runCalc();
+
+(function restoreSavedInputs(){
+  const st = loadSavedState();
+  if(st){
+    Object.entries(st.fields||{}).forEach(([id,v])=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      if(el.type==='checkbox') el.checked = !!v; else el.value = v;
+    });
+    const vtSel = document.getElementById('vessel_type');
+    if(!vtSel.value){ vtSel.value = 'MR2'; applyVesselConsumption(); }
+    if(Array.isArray(st.rotation) && st.rotation.length) rotation = st.rotation;
+    if(st.manualOverrides) manualOverrides = st.manualOverrides;
+    const cd = document.getElementById('consDetails');
+    if(cd) cd.open = !!st.consOpen;
+    updateFreightBasisUI();
+    updateVesselNameField();
+    updateFuelGradeNote();
+    renderRotation();
+    const mins = Math.max(0, Math.round((Date.now()-st.t)/60000));
+    document.getElementById('restoreNote').textContent =
+      'Inputs restored from your last session (' + (mins<1 ? 'just now' : mins + ' min ago') + ').';
+  }
+  persistReady = true;
+  runCalc();
+  document.addEventListener('input', queueSave, true);
+  document.addEventListener('change', queueSave, true);
+  document.getElementById('consDetails').addEventListener('toggle', queueSave);
+  window.addEventListener('beforeunload', saveState);
+})();
+document.getElementById('clearSaved').onclick = ()=>{
+  if(!confirm('Clear all inputs and start a fresh estimate?')) return;
+  persistReady = false;
+  window.removeEventListener('beforeunload', saveState);
+  clearSavedState();
+  location.reload();
+};
 
 // ---------- Report export (PDF via print, or PNG image) ----------
 // The report header is built from the same inputs the estimate was run on, so the recipient can
@@ -10203,22 +10025,22 @@ function buildReportFields(){
   const labels = { GHS:'GHS Vessels', MR_OLD:'MR Old', VERA:'MT Vera', TRANSTONE:'MT Transtone',
                    YQ_HARMONY:'MT YQ Harmony', LYSANDRA:'MT Lysandra' };
   const spotName = document.getElementById('spot_vessel_name').value.trim();
-  const vesselLabel = vessel ? (labels[vessel] || vessel) : (spotName || 'Spot Vessel');
   const vref = VESSEL_REF[vessel] || {};
+  const vsel = document.getElementById('vessel_type');
+  const optText = vsel.selectedIndex>=0 ? vsel.options[vsel.selectedIndex].text : '';
+  const vesselLabel = vref.isClass ? (spotName ? spotName + ' (' + optText + ')' : optText)
+                                   : (labels[vessel] || vessel || spotName || 'Spot Vessel');
   const speed = parseFloat(document.getElementById('speed').value)||0;
   const cargo = parseFloat(document.getElementById('cargo_tonnage').value)||0;
-  const heatOn = document.getElementById('heat_on').checked;
-  const heatMt = parseFloat(document.getElementById('heat_mt').value)||0;
   const d = new Date();
   const dateStr = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
   const fields = [
     ['Speed',        speed ? speed.toFixed(1)+' kn' : '—'],
-    ['Bunker grade', vref.mainFuel || '—'],
+    ['Bunker grade', mainFuel()],
     ['Cargo',        cargo ? cargo.toLocaleString()+' mt' : '—'],
     ['Date',         dateStr]
   ];
-  if(heatOn && heatMt>0) fields.push(['Cargo heating', heatMt.toLocaleString()+' mt']);
-  return { vessel: vesselLabel, route: rotation.map(c=>NODES[c.port].name.split(',')[0]).join(' \u2192 '),
+  return { vessel: vesselLabel, route: rotation.filter(c=>c.port && NODES[c.port]).map(c=>NODES[c.port].name.split(',')[0]).join(' \u2192 '),
            fields, dateStr };
 }
 function paintReportHeader(){
