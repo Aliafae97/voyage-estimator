@@ -14,7 +14,9 @@
     --text-dark:#20242a; --text-mute:#5b6570;
   }
   *{box-sizing:border-box;}
-  body{ margin:0; background:var(--ink); font-family:Georgia,'Times New Roman',serif; color:var(--parchment); }
+  body{ margin:0; background:var(--ink); font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; color:var(--parchment);
+         font-variant-numeric:lining-nums tabular-nums; }
+  input, select, button, td, th{ font-variant-numeric:lining-nums tabular-nums; }
   .wrap{ max-width:1240px; margin:0 auto; padding:22px 20px 44px; }
   /* A faint chart grid on the deep ground: the subject is navigation, and it gives the page
      depth without decoration competing with the data. */
@@ -53,7 +55,7 @@
   table.rot th{ text-align:left; font-family:'SFMono-Regular',Consolas,monospace; font-size:10.5px;
                 text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); padding:4px 8px; }
   table.rot td{ padding:5px 8px; border-top:1px solid var(--parchment-line); vertical-align:middle; }
-  table.rot select, table.rot input{ width:100%; font-family:Georgia,serif; font-size:14px; padding:6px 8px;
+  table.rot select, table.rot input{ width:100%; font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:14px; padding:6px 8px;
         border:1px solid var(--parchment-line); border-radius:4px; background:#fffdf8; color:var(--text-dark); }
   table.rot input[type=number]{ text-align:right; }
   .rowbtns{ display:flex; gap:4px; }
@@ -79,7 +81,7 @@
   .field{ display:flex; flex-direction:column; gap:5px; }
   .field label{ font-family:'SFMono-Regular',Consolas,monospace; font-size:10.5px;
                 text-transform:uppercase; letter-spacing:.06em; color:var(--text-mute); }
-  .field input{ font-family:Georgia,serif; font-size:15px; padding:8px 10px; border:1px solid var(--parchment-line);
+  .field input{ font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:15px; padding:8px 10px; border:1px solid var(--parchment-line);
                 border-radius:4px; background:#fffdf8; color:var(--text-dark); }
   input.computed{ background:var(--panel-2,#f1efe9); color:var(--text,#1c1a17); font-weight:600;
                   cursor:default; }
@@ -106,7 +108,7 @@
   .savebar{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:8px;
         font-size:11.5px; color:var(--text-mute); }
   .linkbtn{ background:none; border:none; padding:0; color:var(--text-mute); text-decoration:underline;
-        cursor:pointer; font-family:Georgia,serif; font-size:11.5px; }
+        cursor:pointer; font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:11.5px; }
   .linkbtn:hover{ color:var(--disch); }
   /* routing preference, now inside the Port Rotation panel */
   .routepref{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 22px; margin-top:14px;
@@ -116,13 +118,16 @@
   .routeopt{ display:flex; align-items:center; gap:7px; font-size:13.5px; color:var(--text-dark); cursor:pointer; }
   .routeopt input{ width:17px; height:17px; margin:0; }
   /* vessel selector + scrubber */
-  .field select{ font-family:Georgia,serif; font-size:15px; padding:8px 10px; border:1px solid var(--parchment-line);
+  .field select{ font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:15px; padding:8px 10px; border:1px solid var(--parchment-line);
         border-radius:4px; background:#fffdf8; color:var(--text-dark); }
-  label.scrubber{ display:flex; align-items:center; gap:8px; cursor:pointer; font-family:Georgia,serif;
+  label.scrubber{ display:flex; align-items:center; gap:8px; cursor:pointer; font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
         font-size:14px; text-transform:none; letter-spacing:normal; color:var(--text-dark);
         border:1px solid var(--parchment-line); background:#fffdf8; border-radius:4px; padding:8px 10px; }
   label.scrubber input{ width:17px; height:17px; margin:0; }
-  .gradenote{ font-size:11px; color:var(--text-mute); }
+  .fieldnotes{ grid-column:1/-1; font-size:11.5px; color:var(--text-mute); margin:-6px 0 -4px; }
+  .fieldnotes:empty, .fieldnotes div:empty{ display:none; }
+  .optstack{ display:flex; flex-direction:column; gap:6px; }
+  .optstack label.scrubber{ width:100%; box-sizing:border-box; }
   /* consumption detail, collapsed by default */
   .consdetails{ margin-top:16px; border:1px dashed var(--parchment-line); border-radius:5px; padding:10px 14px; }
   .consdetails summary{ cursor:pointer; font-family:'SFMono-Regular',Consolas,monospace; font-size:12px;
@@ -130,7 +135,7 @@
   .consdetails[open] summary{ margin-bottom:4px; }
 
   #map{ height:600px; border-radius:6px; border:1px solid var(--parchment-line); }
-  .leaflet-control-layers{ font-family:Georgia,serif; font-size:13px; }
+  .leaflet-control-layers{ font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:13px; }
 
   .stat-row{ display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:10px; }
   .stat-row.bottom{ grid-template-columns:repeat(2,1fr); margin-bottom:18px; }
@@ -164,7 +169,7 @@
   .placeholder{ color:var(--text-mute); font-size:14px; padding:30px 0; text-align:center; }
 
   .drawbar{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
-  .drawbar select{ font-family:Georgia,serif; font-size:14px; padding:7px 9px; border:1px solid var(--parchment-line);
+  .drawbar select{ font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:14px; padding:7px 9px; border:1px solid var(--parchment-line);
                    border-radius:4px; background:#fffdf8; color:var(--text-dark); }
   .drawbar button{ font-family:'SFMono-Regular',Consolas,monospace; font-size:12px; letter-spacing:.04em;
                    text-transform:uppercase; padding:8px 14px; border-radius:4px; cursor:pointer; border:none; }
@@ -175,9 +180,9 @@
   #reportActions{ display:flex; gap:12px; align-items:center; flex-wrap:wrap;
         background:#fffdf8; border:1px solid var(--parchment-line); border-radius:6px;
         padding:14px 16px; margin-bottom:16px; }
-  #reportActions .dlLabel{ font-family:Georgia,serif; font-size:14px; color:var(--text-dark);
+  #reportActions .dlLabel{ font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:14px; color:var(--text-dark);
         margin-right:4px; }
-  .btn-dl{ font-family:Georgia,serif; font-size:14.5px; padding:11px 20px; border-radius:5px;
+  .btn-dl{ font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:14.5px; padding:11px 20px; border-radius:5px;
         cursor:pointer; border:none; display:inline-flex; align-items:center; gap:8px;
         transition:background .15s ease, box-shadow .15s ease; }
   .btn-dl-primary{ background:var(--ink); color:var(--parchment); box-shadow:0 2px 5px rgba(0,0,0,.18); }
@@ -198,7 +203,7 @@
   .modebadge.manual{ background:var(--brass); }
   .modebadge.override{ background:var(--disch); }
   .portSearchWrap{ position:relative; }
-  .portSearchInput{ width:100%; font-family:Georgia,serif; font-size:14px; padding:6px 8px;
+  .portSearchInput{ width:100%; font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:14px; padding:6px 8px;
         border:1px solid var(--parchment-line); border-radius:4px; background:#fffdf8; color:var(--text-dark); }
   .portSearchList{ position:absolute; z-index:50; top:100%; left:0; right:0; max-height:260px; overflow-y:auto;
         background:#fffdf8; border:1px solid var(--ink); border-top:none; border-radius:0 0 5px 5px;
@@ -207,7 +212,7 @@
         letter-spacing:.05em; color:var(--brass); background:#f2ead6; padding:4px 10px; }
   .portSearchOpt{ padding:6px 10px; font-size:13.5px; cursor:pointer; }
   .portSearchOpt:hover, .portSearchOpt.active{ background:#e9e0c8; }
-  .portDutyInp{ width:100%; text-align:right; font-family:Georgia,serif; font-size:14px; padding:6px 8px;
+  .portDutyInp{ width:100%; text-align:right; font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:14px; padding:6px 8px;
         border:1px solid var(--parchment-line); border-radius:4px; background:#fffdf8; color:var(--text-dark); }
 @page { size:A4 portrait; margin:15mm 14mm 16mm 14mm; }
 @media print {
@@ -236,16 +241,16 @@
 }
 #printReportHeader { display:none; margin:0 0 16px 0; }
 #printReportHeader .rule { height:2.5px; background:var(--brass); margin:0 0 9px 0; }
-#printReportHeader h1 { font-family:Georgia,serif; font-size:21px; line-height:1.15; margin:0;
+#printReportHeader h1 { font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:21px; line-height:1.15; margin:0;
       letter-spacing:.01em; color:#141a21; }
 #printReportHeader .org { font-family:'SFMono-Regular',Consolas,monospace; font-size:9px;
       letter-spacing:.16em; text-transform:uppercase; color:#8a6d33; margin:0 0 3px 0; }
-#printReportHeader .vessel { font-family:Georgia,serif; font-size:13px; color:#5b4a26; margin:2px 0 11px 0; }
+#printReportHeader .vessel { font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:13px; color:#5b4a26; margin:2px 0 11px 0; }
 #printReportHeader .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px 18px;
       border-top:.6px solid #dfd6c2; border-bottom:.6px solid #dfd6c2; padding:8px 0; }
 #printReportHeader .grid div span { display:block; font-size:8.4px; letter-spacing:.05em;
       color:#7b8894; margin-bottom:2px; }
-#printReportHeader .grid div b { font-family:Georgia,serif; font-size:11.5px; font-weight:600; color:#141a21; }
+#printReportHeader .grid div b { font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:11.5px; font-weight:600; color:#141a21; }
 
 </style>
 </head>
@@ -271,7 +276,7 @@
     <h2 class="sec"><i>1</i>Port Rotation</h2>
     <datalist id="allPortsDatalist"></datalist>
     <table class="rot" id="rotTable">
-      <thead><tr><th style="width:36px">#</th><th>Port</th><th style="width:110px">Call Type</th><th style="width:110px">Days Alongside</th><th style="width:120px">Port Duty (USD)</th><th style="width:70px"></th></tr></thead>
+      <thead><tr><th style="width:36px">#</th><th>Port</th><th style="width:130px">Call Type</th><th style="width:110px">Days Alongside</th><th style="width:120px">Port Duty (USD)</th><th style="width:70px"></th></tr></thead>
       <tbody id="rotBody"></tbody>
     </table>
     <button class="addrow" id="addRow">+ Add Port Call</button>
@@ -287,15 +292,16 @@
     <h2 class="sec"><i>2</i>Voyage Variables</h2>
     <div class="vargrid">
       <div class="field"><label>Speed (knots)</label><input type="number" id="speed" value="12" step="0.5"></div>
-      <div class="field"><label>Daily Hire (USD/day)</label><input type="number" id="hire" value="" placeholder="0" step="500"></div>
-      <div class="field"><label>Other Costs (USD, lump sum)</label><input type="number" id="other" value="15000" step="500"></div>
+      <div class="field"><label>Daily Hire (USD/day)</label><input type="text" inputmode="decimal" class="numfmt" id="hire" value="" placeholder="0"></div>
+      <div class="field"><label>Other Costs (USD, lump sum)</label><input type="text" inputmode="decimal" class="numfmt" id="other" value="15,000"></div>
       <div class="field"></div>
 
       <div class="fuelhead">Cargo</div>
-      <div class="field"><label>Cargo Tonnage (mt, for cost/tonne)</label><input type="number" id="cargo_tonnage" value="47000" step="500"></div>
+      <div class="field"><label>Cargo Tonnage (mt, for cost/tonne)</label><input type="text" inputmode="decimal" class="numfmt" id="cargo_tonnage" value="47,000"></div>
       <div class="field"></div>
 
       <div class="fuelhead">Freight Revenue</div>
+      <div class="fieldnotes"><div id="freight_suggest_note"></div><div id="ws_flatrate_note"></div></div>
       <div class="field">
         <label>Freight Basis</label>
         <select id="freight_basis">
@@ -304,9 +310,9 @@
           <option value="worldscale">Worldscale (WS)</option>
         </select>
       </div>
-      <div class="field" id="freight_value_wrap"><label id="freight_value_label">Freight Amount (USD)</label><input type="number" id="freight_value" value="0" step="1000"><div id="freight_suggest_note" style="font-size:11px; color:var(--text-mute); margin-top:3px;"></div></div>
+      <div class="field" id="freight_value_wrap"><label id="freight_value_label">Freight Amount (USD)</label><input type="text" inputmode="decimal" class="numfmt" id="freight_value" value="0"></div>
       <div class="field" id="ws_points_wrap" style="display:none;"><label>WS Points (e.g. 120 = WS120)</label><input type="number" id="ws_points" value="100" step="1"></div>
-      <div class="field" id="ws_flatrate_wrap" style="display:none;"><label id="ws_flatrate_label">Flat Rate (USD/mt)</label><input type="number" id="ws_flatrate" value="0" step="0.1"><div id="ws_flatrate_note" style="font-size:11px; color:var(--text-mute); margin-top:3px;"></div></div>
+      <div class="field" id="ws_flatrate_wrap" style="display:none;"><label id="ws_flatrate_label">Flat Rate (USD/mt)</label><input type="number" id="ws_flatrate" value="0" step="0.1"></div>
       <div class="field"><label>Broker Commission (%)</label><input type="number" id="broker_commission" value="0" step="0.25" min="0" max="100"></div>
       <div class="field" style="grid-column:span 2; justify-content:flex-end;"><span style="font-size:11.5px; color:var(--text-mute); line-height:1.4;">Lump sum or USD/mt feed Cargo Tonnage directly; Worldscale computes Freight = WS% × Flat Rate × Cargo Tonnage. Broker Commission is deducted before Voyage Profit and TCE.</span></div>
     </div>
@@ -329,9 +335,12 @@
           <option value="VLCC">VLCC &middot; 200,000&ndash;320,000 DWT</option>
         </select>
       </div>
-      <div class="field" style="justify-content:flex-end;">
-        <label class="scrubber"><input type="checkbox" id="scrubber"> Scrubber fitted</label>
-        <span id="fuelGradeNote" class="gradenote"></span>
+      <div class="field">
+        <label id="fuelGradeNote">Main fuel: VLSFO</label>
+        <div class="optstack">
+          <label class="scrubber"><input type="checkbox" id="scrubber"> Scrubber fitted</label>
+          <label class="scrubber"><input type="checkbox" id="eco"> Eco vessel</label>
+        </div>
       </div>
       <div class="field" id="spot_name_wrap" style="display:none;"><label>Vessel Name (optional)</label><input type="text" id="spot_vessel_name" placeholder="e.g. MT Ocean Glory"></div>
 
@@ -9348,6 +9357,33 @@ let legOverrides = {};
 let manualOverrides = {};
 function pairKey(a,b){ return [a,b].sort().join('__'); }
 
+// ---------- Number inputs shown with thousands separators (10,000 not 10000) ----------
+// Money/tonnage fields are text inputs so they can carry commas; parseNum() strips them again
+// before any calculation.
+function parseNum(v){ return parseFloat(String(v==null?'':v).replace(/,/g,'')) || 0; }
+function fmtNumStr(v){
+  const raw = String(v==null?'':v).replace(/,/g,'').trim();
+  if(raw==='' || raw==='-') return raw;
+  const m = raw.match(/^(-?)(\d*)(\.\d*)?$/);
+  if(!m) return raw;
+  const intPart = (m[2]||'0').replace(/^0+(?=\d)/,'');
+  return m[1] + intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (m[3]||'');
+}
+// Live formatting while typing, keeping the cursor next to the same digit.
+document.addEventListener('input', e=>{
+  const el = e.target;
+  if(!el.classList || !el.classList.contains('numfmt')) return;
+  const cleaned = el.value.replace(/[^\d.\-]/g,'');
+  const caret = el.selectionStart || 0;
+  const digitsBefore = el.value.slice(0,caret).replace(/[^\d.\-]/g,'').length;
+  const out = fmtNumStr(cleaned);
+  if(out === el.value) return;
+  el.value = out;
+  let pos = 0, seen = 0;
+  while(pos < out.length && seen < digitsBefore){ if(out[pos] !== ',') seen++; pos++; }
+  try{ el.setSelectionRange(pos,pos); }catch(_){}
+}, true);
+
 // One voyage only: the rotation opens with three blank port calls for the user to fill in.
 // port:null = not chosen yet; blank rows are ignored by the calculation.
 let rotation = [
@@ -9415,7 +9451,7 @@ function renderRotation(){
             <option value="OwnersMatter" ${call.callType==='OwnersMatter'?'selected':''}>Owners Matter</option>
           </select></td>
       <td><input type="number" data-i="${i}" class="daysInp" value="${call.days||''}" placeholder="0" step="0.5" min="0"></td>
-      <td><input type="number" data-i="${i}" class="portDutyInp" value="${call.portDuty||''}" placeholder="0" step="100" min="0"></td>
+      <td><input type="text" inputmode="decimal" data-i="${i}" class="portDutyInp numfmt" value="${call.portDuty ? fmtNumStr(call.portDuty) : ''}" placeholder="0"></td>
       <td class="rowbtns">
         <button class="iconbtn moveUp" data-i="${i}" title="Move up">↑</button>
         <button class="iconbtn moveDown" data-i="${i}" title="Move down">↓</button>
@@ -9486,7 +9522,7 @@ function renderRotation(){
 
   tbody.querySelectorAll('.typeSel').forEach(el=>el.onchange = e=>{ rotation[+e.target.dataset.i].callType = e.target.value; applyFreightSuggestion(); renderRotation(); runCalc(); });
   tbody.querySelectorAll('.daysInp').forEach(el=>el.onchange = e=>{ rotation[+e.target.dataset.i].days = parseFloat(e.target.value)||0; });
-  tbody.querySelectorAll('.portDutyInp').forEach(el=>el.onchange = e=>{ rotation[+e.target.dataset.i].portDuty = parseFloat(e.target.value)||0; });
+  tbody.querySelectorAll('.portDutyInp').forEach(el=>el.onchange = e=>{ rotation[+e.target.dataset.i].portDuty = parseNum(e.target.value); });
   tbody.querySelectorAll('.moveUp').forEach(el=>el.onclick = e=>{
     const i=+e.target.dataset.i; if(i>0){ [rotation[i-1],rotation[i]]=[rotation[i],rotation[i-1]]; renderRotation(); }
   });
@@ -9607,9 +9643,9 @@ function runCalc(){
   mapSegments.forEach((seg,i)=>{ fullPath = fullPath.concat(i===0 ? seg : seg.slice(1)); });
 
   const speed = parseFloat(document.getElementById('speed').value)||12;
-  const hireRate = parseFloat(document.getElementById('hire').value)||0;
-  const otherCosts = parseFloat(document.getElementById('other').value)||0;
-  const cargoTonnage = parseFloat(document.getElementById('cargo_tonnage').value)||0;
+  const hireRate = parseNum(document.getElementById('hire').value);
+  const otherCosts = parseNum(document.getElementById('other').value);
+  const cargoTonnage = parseNum(document.getElementById('cargo_tonnage').value);
 
   const price = { HSFO: parseFloat(document.getElementById('p_hsfo').value)||0,
                   VLSFO: parseFloat(document.getElementById('p_vlsfo').value)||0,
@@ -9666,7 +9702,7 @@ function runCalc(){
   const costPerTonne = cargoTonnage>0 ? totalCost/cargoTonnage : null;
 
   const freightBasis = document.getElementById('freight_basis').value;
-  const freightValue = parseFloat(document.getElementById('freight_value').value)||0;
+  const freightValue = parseNum(document.getElementById('freight_value').value);
   const wsPoints = parseFloat(document.getElementById('ws_points').value)||0;
   const wsFlatRate = parseFloat(document.getElementById('ws_flatrate').value)||0;
   let freightRevenueGross;
@@ -9820,11 +9856,18 @@ function suggestPortDutyForRow(idx){
   const port = rotation[idx].port;
   // Observed cost from the voyage sheets wins over the size-class estimate where we have it.
   const actual = PORT_DUTY_ACTUAL[port];
-  if(actual !== undefined){ rotation[idx].portDuty = actual; return; }
+  if(actual !== undefined){ rotation[idx].portDuty = roundPortDuty(actual); return; }
   const ref = PORT_COST_REF[port];
   if(!ref) return;
   const key = portCostKeyFor(vt);
-  if(ref[key]!==undefined) rotation[idx].portDuty = ref[key];
+  if(ref[key]!==undefined) rotation[idx].portDuty = roundPortDuty(ref[key]);
+}
+// Auto-filled port duty goes to the nearest 5,000 step, halfway rounding up (22,000 -> 20,000,
+// 22,500 -> 25,000, 23,000 -> 25,000). Any real cost below 2,500 would otherwise become 0, so a
+// non-zero figure never rounds below 5,000. Figures typed by hand are kept exactly as typed.
+function roundPortDuty(v){
+  if(!(v>0)) return 0;
+  return Math.max(5000, Math.round(v/5000)*5000);
 }
 function applyPortDutySuggestions(){
   rotation.forEach((c,i)=>suggestPortDutyForRow(i));
@@ -9858,8 +9901,10 @@ function applyFreightSuggestion(){
 }
 // Fuel grade the vessel burns: Scrubber fitted ticked = HSFO, unticked = VLSFO.
 function mainFuel(){ return document.getElementById('scrubber').checked ? 'HSFO' : 'VLSFO'; }
+function isEco(){ return document.getElementById('eco').checked; }
 function updateFuelGradeNote(){
-  document.getElementById('fuelGradeNote').textContent = 'Main fuel: ' + mainFuel();
+  document.getElementById('fuelGradeNote').textContent = 'Main fuel: ' + mainFuel() +
+    (isEco() ? ' \u00b7 Eco \u2212' + Math.round(ECO_SEA_SAVING*100) + '% at sea' : '');
 }
 // Named vessels carry their own grade from their S&C sheet — selecting one sets the tick box to
 // match (still changeable). Size classes leave the tick box as the user set it.
@@ -9868,7 +9913,24 @@ function syncScrubberFromVessel(){
   if(vref && vref.mainFuel) document.getElementById('scrubber').checked = (vref.mainFuel === 'HSFO');
   updateFuelGradeNote();
 }
+// Eco vessel: sailing consumption (ballast + laden) cut by this share. Eco designs save at sea
+// through the main engine and hull/propeller, so port figures (cargo pumps, boilers, generators)
+// are left unchanged. 25% is a placeholder to refine — the MR reference sheet in this tool shows
+// MR ECO vs MR NORMAL at about -33% ballast and -23% laden.
+const ECO_SEA_SAVING = 0.25;
+const SAILING_FIELDS = ['cs_hsfo_ballast','cs_vlsfo_ballast','cs_lsmgo_ballast',
+                        'cs_hsfo_laden','cs_vlsfo_laden','cs_lsmgo_laden'];
 function applyVesselConsumption(){
+  applyBaseConsumption();
+  const vref = VESSEL_REF[document.getElementById('vessel_type').value];
+  if(isEco() && vref && (vref.hasRealCurve || vref.consumClass)){
+    SAILING_FIELDS.forEach(id=>{
+      const el = document.getElementById(id);
+      el.value = Math.round((parseFloat(el.value)||0)*(1-ECO_SEA_SAVING)*10)/10;
+    });
+  }
+}
+function applyBaseConsumption(){
   const vref = VESSEL_REF[document.getElementById('vessel_type').value];
   const speed = parseFloat(document.getElementById('speed').value)||12;
   updateFuelGradeNote();
@@ -9957,6 +10019,7 @@ document.getElementById('vessel_type').addEventListener('change', function(){
 });
 document.getElementById('speed').addEventListener('change', applyVesselConsumption);
 document.getElementById('scrubber').addEventListener('change', applyVesselConsumption);
+document.getElementById('eco').addEventListener('change', applyVesselConsumption);
 
 // Populate the shared datalist used by the Starting Point / Next Starting Point row pickers
 (function(){
@@ -10031,12 +10094,12 @@ function buildReportFields(){
   const vesselLabel = vref.isClass ? (spotName ? spotName + ' (' + optText + ')' : optText)
                                    : (labels[vessel] || vessel || spotName || 'Spot Vessel');
   const speed = parseFloat(document.getElementById('speed').value)||0;
-  const cargo = parseFloat(document.getElementById('cargo_tonnage').value)||0;
+  const cargo = parseNum(document.getElementById('cargo_tonnage').value);
   const d = new Date();
   const dateStr = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
   const fields = [
     ['Speed',        speed ? speed.toFixed(1)+' kn' : '—'],
-    ['Bunker grade', mainFuel()],
+    ['Bunker grade', mainFuel() + (isEco() ? ' (Eco)' : '')],
     ['Cargo',        cargo ? cargo.toLocaleString()+' mt' : '—'],
     ['Date',         dateStr]
   ];
@@ -10093,21 +10156,21 @@ document.getElementById('downloadImgBtn').onclick = ()=>{
     c.fillStyle=BRASS; c.fillRect(PAD,y,W-2*PAD,3); y += 26;
     c.fillStyle=BRASS; c.font='11px Arial';
     c.fillText('GLOBAL HORIZON SHIPPING', PAD, y-4); y += 14;
-    c.fillStyle=INK; c.font='600 27px Georgia, serif';
+    c.fillStyle=INK; c.font='600 27px "Segoe UI", Arial, sans-serif';
     c.fillText('Voyage Cost Estimate', PAD, y); y += 21;
-    c.fillStyle=BRASS; c.font='15px Georgia, serif';
+    c.fillStyle=BRASS; c.font='15px "Segoe UI", Arial, sans-serif';
     c.fillText(f.vessel + '  \u2014  ' + f.route, PAD, y); y += 16;
     rule(y, HAIR, .8); y += 20;
     f.fields.forEach(([k,v],i)=>{
       const x = PAD + i*((W-2*PAD)/f.fields.length);
       c.fillStyle=MUTE; c.font='10px Arial'; c.fillText(k, x, y);
-      c.fillStyle=INK;  c.font='600 14px Georgia, serif'; c.fillText(v, x, y+17);
+      c.fillStyle=INK;  c.font='600 14px "Segoe UI", Arial, sans-serif'; c.fillText(v, x, y+17);
     });
     y += 27; rule(y, HAIR, .8); y += 30;
 
     stats.forEach((st,i)=>{
       const col=i%3, x=PAD+col*((W-2*PAD)/3), rowY=y+Math.floor(i/3)*54;
-      c.fillStyle=INK;  c.font='600 21px Georgia, serif'; c.fillText(st.n, x, rowY);
+      c.fillStyle=INK;  c.font='600 21px "Segoe UI", Arial, sans-serif'; c.fillText(st.n, x, rowY);
       c.fillStyle=MUTE; c.font='10px Arial';              c.fillText(st.l, x, rowY+16);
     });
     y += Math.ceil(stats.length/3)*54 + 12;
