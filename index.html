@@ -215,7 +215,11 @@
   .portDutyInp{ width:100%; text-align:right; font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:14px; padding:6px 8px;
         border:1px solid var(--parchment-line); border-radius:4px; background:#fffdf8; color:var(--text-dark); }
 @page { size:A4 portrait; margin:15mm 14mm 16mm 14mm; }
+.screen-only-note{ font-size:11.5px; }
 @media print {
+  /* The report drops the working views: the figures repeated elsewhere in it, and the Sea Legs
+     table, which exists on screen only to carry the manual distance override controls. */
+  .report-hide, .screen-only { display:none !important; }
   /* The report is a document that leaves the desk — strip the app around it. The tool's own
      header, the methodology footnote and the working notes under each table are for the person
      using the estimator, not for whoever receives the estimate. */
@@ -9710,7 +9714,13 @@ function runCalc(){
   else if(freightBasis === 'worldscale') freightRevenueGross = (wsPoints/100)*wsFlatRate*cargoTonnage;
   else freightRevenueGross = freightValue;
   const brokerCommissionPct = parseFloat(document.getElementById('broker_commission').value)||0;
-  const freightRevenue = freightRevenueGross * (1 - brokerCommissionPct/100);
+  const brokerCommission = freightRevenueGross * (brokerCommissionPct/100);
+  const freightRevenue = freightRevenueGross - brokerCommission;
+  // Spell out how the gross freight was arrived at, in the basis the user actually chose.
+  const freightLine =
+    freightBasis === 'permt'      ? `Freight — per tonne (${fmt(cargoTonnage)} mt × ${money(freightValue)}/mt)` :
+    freightBasis === 'worldscale' ? `Freight — Worldscale (WS${fmt(wsPoints,0)} = ${fmt(wsPoints/100,2)} × $${fmt(wsFlatRate,2)}/mt flat × ${fmt(cargoTonnage)} mt)` :
+                                    `Freight — lump sum`;
   const voyageProfit = freightRevenue - totalCost;
   const tce = totalDays>0 ? (voyageProfit + hireCost)/totalDays : null;
 
@@ -9754,18 +9764,28 @@ function runCalc(){
     </tr>`;
   }).join('');
 
-  // ---- port days table ----
-  const callTypeBadgeClass = {Load:'load', Discharge:'disch', Bunkering:'boundary', OwnersMatter:'ballast'};
-  const callTypeLabel = {Load:'Load', Discharge:'Discharge', Bunkering:'Bunkering', OwnersMatter:'Owners Matter'};
-  let portHtml = calls.map((c,i)=>`<tr><td><span class="badge ${callTypeBadgeClass[c.callType]||'disch'}">${callTypeLabel[c.callType]||c.callType}</span> ${NODES[c.port].name}</td><td class="num">${fmt(c.days,2)}</td><td class="num">${money(portDutyByCall[i])}</td></tr>`).join('');
+  // ---- voyage table: ports and legs in one sequence, the way the rotation is actually sailed ----
+  const callTypeName = {Load:'Load', Discharge:'Discharge', Bunkering:'Bunkering', OwnersMatter:'Owners Matter'};
+  let voyageRows = '';
+  calls.forEach((c,i)=>{
+    voyageRows += `<tr><td>${NODES[c.port].name} <span style="color:var(--text-mute);">(${callTypeName[c.callType]||c.callType})</span></td>` +
+                  `<td class="num">—</td><td class="num">${fmt(c.days,2)}</td><td class="num">—</td></tr>`;
+    const leg = legs[i];
+    if(leg){
+      voyageRows += `<tr><td style="padding-left:18px; color:var(--text-mute);">${NODES[leg.from].name} → ${NODES[leg.to].name}` +
+                    ` <span class="badge ${leg.cargoFrac<0.005?'ballast':'laden'}">${leg.cargoFrac<0.005?'Ballast':'Laden'}</span></td>` +
+                    `<td class="num">${fmt(leg.nm)}</td><td class="num">—</td><td class="num">${fmt(leg.nm/speed/24,2)}</td></tr>`;
+    }
+  });
+
 
   resultsArea.innerHTML = `
     ${missingPrices.length ? `<div style="background:#f3d9d6; color:#a5342f; border:1px solid #a5342f; border-radius:5px; padding:8px 12px; margin-bottom:12px; font-size:13px;">No bunker price entered for <b>${missingPrices.join(', ')}</b> — that fuel is being costed at $0. Fill it in under Bunker Details.</div>` : ''}
     <div class="stat-row">
-      <div class="stat"><div class="n">${fmt(totalNM)}</div><div class="l">Total NM</div></div>
+      <div class="stat report-hide"><div class="n">${fmt(totalNM)}</div><div class="l">Total NM</div></div>
       <div class="stat"><div class="n">${fmt(totalDays,1)}</div><div class="l">Total Voyage Days</div></div>
-      <div class="stat"><div class="n">${money(totalCost)}</div><div class="l">Total Voyage Cost</div></div>
-      <div class="stat"><div class="n">${totalDays>0 ? money(totalCost/totalDays) : '—'}</div><div class="l">Cost / Day</div></div>
+      <div class="stat report-hide"><div class="n">${money(totalCost)}</div><div class="l">Total Voyage Cost</div></div>
+      <div class="stat report-hide"><div class="n">${totalDays>0 ? money(totalCost/totalDays) : '—'}</div><div class="l">Cost / Day</div></div>
       <div class="stat"><div class="n">${costPerTonne!==null ? '$'+fmt(costPerTonne,2) : '—'}</div><div class="l">Cost / Tonne (Cargo)</div></div>
     </div>
     <div class="stat-row bottom">
@@ -9775,18 +9795,18 @@ function runCalc(){
     <div class="cols">
       <div>
         <table class="breakdown">
+          <thead><tr><th>Port / Leg</th><th class="num">Routed Distance (nm)</th><th class="num">Port Days</th><th class="num">Sailing Days</th></tr></thead>
+          <tbody>${voyageRows}
+            <tr class="total"><td>Total</td><td class="num">${fmt(totalNM)}</td><td class="num">${fmt(portDays,2)}</td><td class="num">${fmt(seaDays,2)}</td></tr>
+          </tbody>
+        </table>
+        <table class="breakdown screen-only" style="margin-top:14px;">
           <thead><tr><th>Sea Legs</th><th class="num">Great Circle (nm)</th><th class="num">Routed (nm)</th><th class="num">Detour</th><th class="num">Days</th><th>Manual Override</th></tr></thead>
           <tbody>${legsHtml}
             <tr class="total"><td>Total Sailing</td><td class="num"></td><td class="num">${fmt(totalNM)}</td><td class="num"></td><td class="num">${fmt(seaDays,2)}</td><td></td></tr>
           </tbody>
         </table>
-        <p class="note" style="margin-top:6px; color:var(--text-mute);">Great Circle = straight-line (haversine) distance. Routed = what actually feeds the cost calculation, whether auto-routed or manually overridden. Detour % shows how much longer the real sea route is than a straight line — a sanity check against land/chokepoint routing.</p>
-        <table class="breakdown" style="margin-top:14px;">
-          <thead><tr><th>Port Calls</th><th class="num">Days</th><th class="num">Port Duty</th></tr></thead>
-          <tbody>${portHtml}
-            <tr class="total"><td>Total Port Days</td><td class="num">${fmt(portDays,2)}</td><td class="num">${money(portDutyTotal)}</td></tr>
-          </tbody>
-        </table>
+        <p class="note screen-only screen-only-note" style="margin-top:6px; color:var(--text-mute);">Great Circle = straight-line (haversine) distance. Routed = what actually feeds the cost calculation, whether auto-routed or manually overridden. Detour % shows how much longer the real sea route is than a straight line — a sanity check against land/chokepoint routing. Use the Manual Override here to correct a leg; this table is for working on screen and is left out of the report.</p>
       </div>
       <div>
         <table class="breakdown">
@@ -9799,6 +9819,19 @@ function runCalc(){
             <tr><td>Port Duty (sum of amounts entered per port call)</td><td class="num">${money(portDutyTotal)}</td></tr>
             <tr><td>Other Costs</td><td class="num">${money(otherCosts)}</td></tr>
             <tr class="total"><td>TOTAL VOYAGE COST</td><td class="num">${money(totalCost)}</td></tr>
+          </tbody>
+        </table>
+        <table class="breakdown" style="margin-top:14px;">
+          <thead><tr><th>Profit Calculation</th><th class="num">USD</th></tr></thead>
+          <tbody>
+            <tr><td>${freightLine}</td><td class="num">${money(freightRevenueGross)}</td></tr>
+            <tr><td>Less broker commission (${fmt(brokerCommissionPct,2)}% × ${money(freightRevenueGross)})</td><td class="num">${brokerCommission>0 ? '−'+money(brokerCommission) : money(0)}</td></tr>
+            <tr class="total"><td>Net Freight Revenue</td><td class="num">${money(freightRevenue)}</td></tr>
+            <tr><td>Less total voyage cost</td><td class="num">−${money(totalCost)}</td></tr>
+            <tr class="total"><td>VOYAGE PROFIT</td><td class="num">${money(voyageProfit)}</td></tr>
+            <tr><td>Add back hire (${fmt(totalDays,1)} days × ${money(hireRate)}/day), which TCE excludes</td><td class="num">+${money(hireCost)}</td></tr>
+            <tr><td>Voyage result before hire</td><td class="num">${money(voyageProfit + hireCost)}</td></tr>
+            <tr class="total"><td>TCE (${money(voyageProfit + hireCost)} ÷ ${fmt(totalDays,2)} days)</td><td class="num">${tce!==null ? money(tce)+'/day' : '—'}</td></tr>
           </tbody>
         </table>
       </div>
@@ -10126,9 +10159,9 @@ document.getElementById('downloadImgBtn').onclick = ()=>{
     const f = buildReportFields();
     // Read the rendered tables rather than recomputing: whatever is on screen is what gets exported,
     // including any manual overrides applied after the calculation.
-    const stats = [...document.querySelectorAll('#resultsArea .stat')].map(el=>({
+    const stats = [...document.querySelectorAll('#resultsArea .stat:not(.report-hide)')].map(el=>({
       n: el.querySelector('.n').textContent.trim(), l: el.querySelector('.l').textContent.trim() }));
-    const tables = [...document.querySelectorAll('#resultsArea table.breakdown')].map(t=>({
+    const tables = [...document.querySelectorAll('#resultsArea table.breakdown:not(.screen-only)')].map(t=>({
       head: [...t.querySelectorAll('thead th')].map(th=>th.textContent.trim()),
       rows: [...t.querySelectorAll('tbody tr')].map(tr=>({
         cells: [...tr.querySelectorAll('td')].map(td=>td.textContent.trim()),
