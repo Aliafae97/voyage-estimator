@@ -451,7 +451,7 @@ const NODES = {
   nacala:{name:"Nacala, Mozambique",lat:-14.5500,lon:40.6700,region:"East & Southern Africa",type:"port"},
   richards_bay:{name:"Richards Bay, South Africa",lat:-28.7800,lon:32.0900,region:"East & Southern Africa",type:"port"},
   port_sudan:{name:"Port Sudan, Sudan",lat:19.6167,lon:37.2167,region:"Red Sea & Egypt",type:"port"},
-  toamasina:{name:"Toamasina, Madagascar",lat:-18.1500,lon:49.4100,region:"East & Southern Africa",type:"port"},
+  toamasina:{name:"Toamasina (Tamatave), Madagascar",alt:"Tamatave",lat:-18.1500,lon:49.4100,region:"East & Southern Africa",type:"port"},
   durban:{name:"Durban, South Africa",lat:-29.8587,lon:31.0218,region:"East & Southern Africa",type:"port"},
   cape_town:{name:"Cape Town, South Africa",lat:-33.9249,lon:18.4241,region:"East & Southern Africa",type:"port"},
   lagos:{name:"Lagos, Nigeria",lat:6.4531,lon:3.3958,region:"West Africa",type:"port"},
@@ -478,7 +478,7 @@ const NODES = {
   busan:{name:"Busan, South Korea",lat:35.1028,lon:129.0403,region:"Far East",type:"port"},
   hong_kong:{name:"Hong Kong",lat:22.3000,lon:114.1700,region:"Far East",type:"port"},
   kaohsiung:{name:"Kaohsiung, Taiwan",lat:22.6100,lon:120.2800,region:"Far East",type:"port"},
-  ho_chi_minh:{name:"Ho Chi Minh City, Vietnam",lat:10.7700,lon:106.7000,region:"Far East",type:"port"},
+  ho_chi_minh:{name:"Ho Chi Minh City, Vietnam",lat:10.7700,lon:106.7000,region:"Far East",type:"port"},quang_ninh:{name:"Quang Ninh, Vietnam",alt:"Cai Lan Hon Gai Ha Long Cam Pha",lat:20.9500,lon:107.0700,region:"Far East",type:"port"},
   manila:{name:"Manila, Philippines",lat:14.5800,lon:120.9700,region:"Far East",type:"port"},
   tokyo:{name:"Tokyo, Japan",lat:35.6100,lon:139.7800,region:"Far East",type:"port"},
   chiba:{name:"Chiba, Japan",lat:35.5947,lon:140.1040,region:"Far East",type:"port"},
@@ -1560,7 +1560,7 @@ const NODES = {
   marnet_944:{lat:34.24,lon:-146.1,type:"waypoint"},
   marnet_945:{lat:41.22,lon:-64.63,type:"waypoint"},
   marnet_946:{lat:40.27,lon:-66.67,type:"waypoint"},
-  marnet_947:{lat:-10.02,lon:49.92,type:"waypoint"},
+  marnet_947:{lat:-10.02,lon:49.92,type:"waypoint"},mg_east_1:{lat:-16.00,lon:50.30,type:"waypoint"},mg_east_2:{lat:-13.50,lon:50.30,type:"waypoint"},mg_cap_ambre:{lat:-11.80,lon:49.40,type:"waypoint"},moz_chan_north:{lat:-12.60,lon:47.80,type:"waypoint"},aldabra_south:{lat:-10.60,lon:46.60,type:"waypoint"},
   marnet_948:{lat:-15.07,lon:53.77,type:"waypoint"},
   marnet_949:{lat:17.84,lon:-120.0,type:"waypoint"},
   marnet_950:{lat:70.23,lon:9.33,type:"waypoint"},
@@ -9038,6 +9038,15 @@ const NODES = {
 };
 
 const EDGES = [
+  // Quang Ninh (Cai Lan / Hon Gai), at the head of the Gulf of Tonkin.
+  ["quang_ninh","marnet_8293"], ["quang_ninh","marnet_3142"],
+  // Rounding Madagascar: the MARNET network is sparse here, so a voyage between the east coast
+  // of Madagascar and the Mozambique Channel was being sent far out to sea. These waypoints
+  // follow the real track — up the east coast, round Cap d'Ambre, then into the channel.
+  ["marnet_1095","mg_east_1"], ["mg_east_1","mg_east_2"], ["mg_east_2","mg_cap_ambre"],
+  ["mg_cap_ambre","marnet_947"], ["mg_cap_ambre","moz_chan_north"],
+  ["moz_chan_north","marnet_5512"], ["moz_chan_north","marnet_4406"],
+  ["marnet_6926","aldabra_south"], ["aldabra_south","mg_cap_ambre"],
   ["aden","piracy_avoid_1"], ["djibouti","piracy_avoid_1"], ["hodeidah","piracy_avoid_1"], ["jeddah","piracy_avoid_1"],
   ["hodeidah","jeddah"],
   ["piracy_avoid_1","piracy_avoid_2"],
@@ -9338,7 +9347,7 @@ Object.entries(NODES).forEach(([id,n])=>{
 // flat, searchable list of all ports (region kept for grouped display in the search results)
 const PORT_LIST = Object.entries(NODES)
   .filter(([id,n])=>n.type==="port")
-  .map(([id,n])=>({id, name:n.name, region:n.region}));
+  .map(([id,n])=>({id, name:n.name, region:n.region, alt:n.alt||""}));
 
 function portOptionsHtml(selectedId){
   let html = '';
@@ -9468,7 +9477,7 @@ function renderRotation(){
   function renderSuggestions(listEl, query, i){
     const q = query.trim().toLowerCase();
     const matches = q
-      ? PORT_LIST.filter(p => p.name.toLowerCase().includes(q))
+      ? PORT_LIST.filter(p => p.name.toLowerCase().includes(q) || p.alt.toLowerCase().includes(q))
       : PORT_LIST;
     if(matches.length===0){
       listEl.innerHTML = `<div class="portSearchOpt" style="color:var(--text-mute); cursor:default;">No ports found</div>`;
