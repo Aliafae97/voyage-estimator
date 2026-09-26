@@ -298,7 +298,7 @@
       <div class="field"><label>Speed (knots)</label><input type="number" id="speed" value="12" step="0.5"></div>
       <div class="field"><label>Daily Hire (USD/day)</label><input type="text" inputmode="decimal" class="numfmt" id="hire" value="" placeholder="0"></div>
       <div class="field"><label>Other Costs (USD, lump sum)</label><input type="text" inputmode="decimal" class="numfmt" id="other" value="15,000"></div>
-      <div class="field"></div>
+      <div class="field"><label>AWRP &mdash; War Risk Premium (USD)</label><input type="text" inputmode="decimal" class="numfmt" id="awrp" value="" placeholder="0"></div>
 
       <div class="fuelhead">Cargo</div>
       <div class="field"><label>Cargo Tonnage (mt, for cost/tonne)</label><input type="text" inputmode="decimal" class="numfmt" id="cargo_tonnage" value="47,000"></div>
@@ -441,7 +441,7 @@ const NODES = {
   aden:{name:"Aden, Yemen",lat:12.7855,lon:45.0187,region:"Red Sea & Egypt",type:"port"},
   hodeidah:{name:"Hodeidah, Yemen",lat:14.8022,lon:42.9511,region:"Red Sea & Egypt",type:"port"},
   jeddah:{name:"Jeddah, Saudi Arabia",lat:21.4858,lon:39.1925,region:"Red Sea & Egypt",type:"port"},
-  suez:{name:"Suez, Egypt",lat:29.9737,lon:32.5263,region:"Red Sea & Egypt",type:"port"},
+  suez:{name:"Suez Canal (Suez), Egypt",alt:"Suez Canal transit Port Said canal",lat:29.9737,lon:32.5263,region:"Red Sea & Egypt",type:"port"},
   port_said:{name:"Port Said, Egypt",lat:31.2565,lon:32.3018,region:"Red Sea & Egypt",type:"port"},
   alexandria:{name:"Alexandria, Egypt",lat:31.2001,lon:29.9187,region:"Red Sea & Egypt",type:"port"},
   djibouti:{name:"Djibouti City, Djibouti",lat:11.5883,lon:43.1450,region:"Red Sea & Egypt",type:"port"},
@@ -534,7 +534,7 @@ const NODES = {
   tartous:{name:"Tartous, Syria",lat:34.8833,lon:35.8667,region:"Türkiye / E. Mediterranean",type:"port"},
   canakkale:{name:"Çanakkale, Türkiye",lat:40.1500,lon:26.4000,region:"Türkiye / E. Mediterranean",type:"port"},
   patras:{name:"Patras, Greece",lat:38.2333,lon:21.7333,region:"Europe & Mediterranean",type:"port"},
-  odessa:{name:"Odessa, Ukraine",lat:46.4833,lon:30.7333,region:"Europe & Mediterranean",type:"port"},
+  odessa:{name:"Odessa, Ukraine",lat:46.4833,lon:30.7333,region:"Europe & Mediterranean",type:"port"},kulevi:{name:"Kulevi, Georgia",alt:"Kulevi Oil Terminal Poti Black Sea",lat:42.2800,lon:41.6300,region:"Europe & Mediterranean",type:"port"},
   hazira:{name:"Hazira, India",lat:21.0950,lon:72.6500,region:"India",type:"port"},
   diu_offshore:{lat:20.50,lon:70.80,type:"waypoint"},
   tuticorin:{name:"Tuticorin, India",lat:8.7642,lon:78.1348,region:"India",type:"port"},
@@ -9038,6 +9038,8 @@ const NODES = {
 };
 
 const EDGES = [
+  // Kulevi oil terminal, at the mouth of the Rioni on the Georgian Black Sea coast.
+  ["kulevi","marnet_7997"], ["kulevi","marnet_4373"],
   // Quang Ninh (Cai Lan / Hon Gai), at the head of the Gulf of Tonkin.
   ["quang_ninh","marnet_8293"], ["quang_ninh","marnet_3142"],
   // Rounding Madagascar: the MARNET network is sparse here, so a voyage between the east coast
@@ -9461,7 +9463,7 @@ function renderRotation(){
             <option value="Load" ${call.callType==='Load'?'selected':''}>Load</option>
             <option value="Discharge" ${call.callType==='Discharge'?'selected':''}>Discharge</option>
             <option value="Bunkering" ${call.callType==='Bunkering'?'selected':''}>Bunkering</option>
-            <option value="OwnersMatter" ${call.callType==='OwnersMatter'?'selected':''}>Owners Matter</option>
+            <option value="CollectionDelivery" ${call.callType==='CollectionDelivery'?'selected':''}>Collection/Delivery</option>
           </select></td>
       <td><input type="number" data-i="${i}" class="daysInp" value="${call.days||''}" placeholder="0" step="0.5" min="0"></td>
       <td><input type="text" inputmode="decimal" data-i="${i}" class="portDutyInp numfmt" value="${call.portDuty ? fmtNumStr(call.portDuty) : ''}" placeholder="0"></td>
@@ -9533,7 +9535,11 @@ function renderRotation(){
     });
   });
 
-  tbody.querySelectorAll('.typeSel').forEach(el=>el.onchange = e=>{ rotation[+e.target.dataset.i].callType = e.target.value; applyFreightSuggestion(); renderRotation(); runCalc(); });
+  tbody.querySelectorAll('.typeSel').forEach(el=>el.onchange = e=>{
+    const i = +e.target.dataset.i;
+    rotation[i].callType = e.target.value;
+    applyFreightSuggestion(); renderRotation(); runCalc();
+  });
   tbody.querySelectorAll('.daysInp').forEach(el=>el.onchange = e=>{ rotation[+e.target.dataset.i].days = parseFloat(e.target.value)||0; });
   tbody.querySelectorAll('.portDutyInp').forEach(el=>el.onchange = e=>{ rotation[+e.target.dataset.i].portDuty = parseNum(e.target.value); });
   tbody.querySelectorAll('.moveUp').forEach(el=>el.onclick = e=>{
@@ -9612,6 +9618,8 @@ function runCalc(){
   const callSequence = calls.map(c=>({port:c.port, callType:c.callType}));
   let cargoFraction = 0;
   const fractionAtDeparture = callSequence.map(c=>{
+    // Only Load and Discharge move cargo. Collection/Delivery (taking over or handing back the
+    // vessel) and Bunkering leave it as it is — collect in ballast, then sail on to load.
     if(c.callType==='Load') cargoFraction = 1;
     if(c.callType==='Discharge') cargoFraction = 0;
     return cargoFraction;
@@ -9658,6 +9666,9 @@ function runCalc(){
   const speed = parseFloat(document.getElementById('speed').value)||12;
   const hireRate = parseNum(document.getElementById('hire').value);
   const otherCosts = parseNum(document.getElementById('other').value);
+  // Additional War Risk Premium — a lump sum for the voyage, kept on its own line so it is visible
+  // in the report rather than buried inside Other Costs.
+  const awrpCost = parseNum(document.getElementById('awrp').value);
   const cargoTonnage = parseNum(document.getElementById('cargo_tonnage').value);
 
   const price = { HSFO: parseFloat(document.getElementById('p_hsfo').value)||0,
@@ -9695,7 +9706,7 @@ function runCalc(){
     });
   });
   // Each port call uses its own Loading or Discharging consumption rate — not one blended figure.
-  // Bunkering / Owners Matter calls aren't cargo operations, so default to the Loading rate (lower
+  // Bunkering and Collection/Delivery aren't cargo operations, so they take the Loading rate (lower
   // activity than active discharge, a reasonable proxy in the absence of dedicated figures).
   calls.forEach(call=>{
     const rate = call.callType === 'Discharge' ? portConsDisch : portConsLoad;
@@ -9711,7 +9722,7 @@ function runCalc(){
   const portDutyByCall = calls.map(c => c.portDuty||0);
   const portDutyTotal = portDutyByCall.reduce((s,v)=>s+v, 0);
 
-  const totalCost = hireCost + bunkerTotal + otherCosts + portDutyTotal;
+  const totalCost = hireCost + bunkerTotal + otherCosts + awrpCost + portDutyTotal;
   const costPerTonne = cargoTonnage>0 ? totalCost/cargoTonnage : null;
 
   const freightBasis = document.getElementById('freight_basis').value;
@@ -9731,7 +9742,10 @@ function runCalc(){
     freightBasis === 'worldscale' ? `Freight — Worldscale (WS${fmt(wsPoints,0)} = ${fmt(wsPoints/100,2)} × $${fmt(wsFlatRate,2)}/mt flat × ${fmt(cargoTonnage)} mt)` :
                                     `Freight — lump sum`;
   const voyageProfit = freightRevenue - totalCost;
-  const tce = totalDays>0 ? (voyageProfit + hireCost)/totalDays : null;
+  // TCE the way the desk states it: daily hire + profit per day. Same figure as the textbook form
+  // (revenue less voyage costs excluding hire, over the voyage days), since hire is deducted inside
+  // voyageProfit and added straight back here.
+  const tce = totalDays>0 ? hireRate + voyageProfit/totalDays : null;
 
   // ---- draw map ----
   const latlngs = fullPath.map(p=>[p.lat, p.lon]);
@@ -9746,7 +9760,11 @@ function runCalc(){
   fullPath.forEach((p)=>{
     const call = findCallAt(p);
     let fill = '#2f8f8a', r=4, label = p.label || null;
-    if(call){ fill = call.callType==='Load' ? '#3a7d44' : '#a5342f'; r=7; label = NODES[call.port].name + ` (${call.callType})`; }
+    if(call){
+      fill = call.callType==='Load' ? '#3a7d44'
+           : call.callType==='Discharge' ? '#a5342f' : '#7c8a97';
+      r=7; label = NODES[call.port].name + ` (${call.callType==='CollectionDelivery' ? 'Collection/Delivery' : call.callType})`;
+    }
     L.circleMarker([p.lat,p.lon],{radius:r,color:'#0f2436',fillColor:fill,fillOpacity:1,weight:2})
       .bindTooltip(label || 'Route point', {permanent: !!call, direction:'top', offset:[0,-6]})
       .addTo(routeLayer);
@@ -9774,7 +9792,7 @@ function runCalc(){
   }).join('');
 
   // ---- voyage table: ports and legs in one sequence, the way the rotation is actually sailed ----
-  const callTypeName = {Load:'Load', Discharge:'Discharge', Bunkering:'Bunkering', OwnersMatter:'Owners Matter'};
+  const callTypeName = {Load:'Load', Discharge:'Discharge', Bunkering:'Bunkering', CollectionDelivery:'Collection/Delivery'};
   let voyageRows = '';
   calls.forEach((c,i)=>{
     voyageRows += `<tr><td>${NODES[c.port].name} <span style="color:var(--text-mute);">(${callTypeName[c.callType]||c.callType})</span></td>` +
@@ -9826,6 +9844,7 @@ function runCalc(){
             <tr><td>VLSFO (${fmt(fuelMtByType.VLSFO,1)} mt × ${money(price.VLSFO)}/mt)</td><td class="num">${money(fuelCostByType.VLSFO)}</td></tr>
             <tr><td>LSMGO (${fmt(fuelMtByType.LSMGO,1)} mt × ${money(price.LSMGO)}/mt)</td><td class="num">${money(fuelCostByType.LSMGO)}</td></tr>
             <tr><td>Port Duty (sum of amounts entered per port call)</td><td class="num">${money(portDutyTotal)}</td></tr>
+            <tr><td>AWRP (war risk premium)</td><td class="num">${money(awrpCost)}</td></tr>
             <tr><td>Other Costs</td><td class="num">${money(otherCosts)}</td></tr>
             <tr class="total"><td>TOTAL VOYAGE COST</td><td class="num">${money(totalCost)}</td></tr>
           </tbody>
@@ -9838,9 +9857,9 @@ function runCalc(){
             <tr class="total"><td>Net Freight Revenue</td><td class="num">${money(freightRevenue)}</td></tr>
             <tr><td>Less total voyage cost</td><td class="num">−${money(totalCost)}</td></tr>
             <tr class="total"><td>VOYAGE PROFIT</td><td class="num">${money(voyageProfit)}</td></tr>
-            <tr><td>Add back hire (${fmt(totalDays,1)} days × ${money(hireRate)}/day), which TCE excludes</td><td class="num">+${money(hireCost)}</td></tr>
-            <tr><td>Voyage result before hire</td><td class="num">${money(voyageProfit + hireCost)}</td></tr>
-            <tr class="total"><td>TCE (${money(voyageProfit + hireCost)} ÷ ${fmt(totalDays,2)} days)</td><td class="num">${tce!==null ? money(tce)+'/day' : '—'}</td></tr>
+            <tr><td>Profit per day (${money(voyageProfit)} \u00f7 ${fmt(totalDays,2)} days)</td><td class="num">${totalDays>0 ? money(voyageProfit/totalDays) : '—'}</td></tr>
+            <tr><td>Add daily hire</td><td class="num">+${money(hireRate)}</td></tr>
+            <tr class="total"><td>TCE (daily hire + profit per day)</td><td class="num">${tce!==null ? money(tce)+'/day' : '—'}</td></tr>
           </tbody>
         </table>
       </div>
