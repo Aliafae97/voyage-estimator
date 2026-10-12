@@ -11658,16 +11658,6 @@ function runCalc(){
   const wsProfit  = (wsFlat>0 && wsStd) ? (wsRevenue - wsCost) : null;
   const wsDays    = wsStd ? wsStd.days : 0;
   const wsTCE     = (wsProfit!==null && wsDays>0) ? wsProfit/wsDays : null;
-  // The same vessel, same freight, repriced at the VLSFO price entered under Bunker Details.
-  // The flat rate itself stays on the frozen $490 base \u2014 that is what makes it reproduce the
-  // published book \u2014 but her RESULT at today's bunker price is the comparison that is actually
-  // like for like with ours, because the book's cheap frozen fuel is the single biggest reason
-  // she can look better than the ship we are really fixing.
-  const wsMktPrice = parseFloat(document.getElementById('p_vlsfo').value)||0;
-  const wsShowMkt  = (wsProfit!==null && wsMktPrice>0 && Math.abs(wsMktPrice-WS_REF.bunkerPrice)>0.5);
-  const wsCostMkt  = wsShowMkt ? (wsStd.hire + wsStd.fuelMt*wsMktPrice + wsStd.ports) : 0;
-  const wsProfitMkt= wsShowMkt ? (wsRevenue - wsCostMkt) : null;
-  const wsTCEMkt   = (wsProfitMkt!==null && wsDays>0) ? wsProfitMkt/wsDays : null;
 
   // ---- draw map ----
   const latlngs = fullPath.map(p=>[p.lat, p.lon]);
@@ -11743,8 +11733,8 @@ function runCalc(){
         ? wsRoute.l+' / '+wsRoute.d+' &middot; $'+fmt(wsFlat,2)+'/mt &middot; '+wsBook.year+' book'
         : 'no published rate &middot; $'+fmt(wsFlat,2)+'/mt estimated'}${calls.length>2 ? ' &middot; pair only ('+calls.length+' ports)' : ''}</em></h3>
       <div class="stat-row bottom wsrow">
-        <div class="stat hero ws${wsProfit<0?' neg':''}"><div class="n">${money(wsProfit)}</div><div class="l">Voyage Profit \u2014 Worldscale</div><div class="sub">WS${fmt(wsPts,0)}${wsPtsDefault?' (default)':''} &times; $${fmt(wsFlat,2)}/mt &times; ${fmt(WS_REF.cargo)} mt</div>${wsShowMkt?`<div class="pairline"><span>at $${fmt(wsMktPrice,0)}/mt bunkers</span><b>${money(wsProfitMkt)}</b></div>`:''}</div>
-        <div class="stat hero ws${wsTCE!==null && wsTCE<0?' neg':''}"><div class="n">${wsTCE!==null ? money(wsTCE) : '—'}</div><div class="l">TCE \u2014 Worldscale (USD/day)</div><div class="sub">profit \u00f7 ${fmt(wsDays,2)} days</div>${wsShowMkt?`<div class="pairline"><span>at $${fmt(wsMktPrice,0)}/mt bunkers</span><b>${money(wsTCEMkt)}</b></div>`:''}</div>
+        <div class="stat hero ws${wsProfit<0?' neg':''}"><div class="n">${money(wsProfit)}</div><div class="l">Voyage Profit \u2014 Worldscale</div><div class="sub">WS${fmt(wsPts,0)}${wsPtsDefault?' (default)':''} &times; $${fmt(wsFlat,2)}/mt &times; ${fmt(WS_REF.cargo)} mt</div></div>
+        <div class="stat hero ws${wsTCE!==null && wsTCE<0?' neg':''}"><div class="n">${wsTCE!==null ? money(wsTCE) : '—'}</div><div class="l">TCE \u2014 Worldscale (USD/day)</div><div class="sub">profit \u00f7 ${fmt(wsDays,2)} days</div></div>
       </div>
     </div>` : ''}
     <div class="esec">
@@ -11821,14 +11811,9 @@ function runCalc(){
             <tr><td>Less standard voyage cost</td><td class="num">\u2212${money(wsCost)}</td></tr>
             <tr class="total"><td>VOYAGE PROFIT \u2014 WORLDSCALE</td><td class="num">${money(wsProfit)}</td></tr>
             <tr class="total"><td>TCE \u2014 WORLDSCALE (${money(wsProfit)} \u00f7 ${fmt(wsDays,2)} days)</td><td class="num">${wsTCE!==null ? money(wsTCE)+'/day' : '—'}</td></tr>
-            ${wsShowMkt?`<tr><td colspan="2" style="padding-top:10px; color:var(--text-mute); font-size:11px; text-transform:uppercase; letter-spacing:.05em;">The same vessel repriced at $${fmt(wsMktPrice,0)}/mt, the bunker price entered for this voyage</td></tr>
-            <tr><td>${WS_REF.fuelGrade} ${fmt(wsStd.fuelMt,1)} mt at $${fmt(wsMktPrice,2)}/mt</td><td class="num">${money(wsStd.fuelMt*wsMktPrice)}</td></tr>
-            <tr><td>Standard voyage cost at $${fmt(wsMktPrice,0)}/mt</td><td class="num">${money(wsCostMkt)}</td></tr>
-            <tr><td><b>Voyage profit at $${fmt(wsMktPrice,0)}/mt</b></td><td class="num"><b>${money(wsProfitMkt)}</b></td></tr>
-            <tr><td><b>TCE at $${fmt(wsMktPrice,0)}/mt</b> (${money(wsProfitMkt)} \u00f7 ${fmt(wsDays,2)} days)</td><td class="num"><b>${money(wsTCEMkt)}/day</b></td></tr>`:''}
           </tbody>
         </table>
-        <p class="tariffNote"><b>Standard vessel</b> ${fmt(WS_REF.dwt)} dwt &middot; ${fmt(WS_REF.speed,1)} kn &middot; ${fmt(WS_REF.seaFO,1)} mt/day at sea &middot; ${fmt(WS_REF.portDays*24,0)} h port &middot; hire ${money(WS_REF.hire)}/day. Flat rate is built on <b>$${fmt(WS_REF.bunkerPrice,0)}/mt</b>, the frozen ${WS_RATE_YEARS[0]} base \u2014 that is what makes it match the book, so it does not follow our bunker price. TCE is profit \u00f7 day.</p></div></details>` : ''}
+        <p class="tariffNote"><b>Standard vessel</b> ${fmt(WS_REF.dwt)} dwt &middot; ${fmt(WS_REF.speed,1)} kn &middot; ${fmt(WS_REF.seaFO,1)} mt/day at sea &middot; ${fmt(WS_REF.portDays*24,0)} h port &middot; hire ${money(WS_REF.hire)}/day &middot; ${WS_REF.fuelGrade} $${fmt(WS_REF.bunkerPrice,0)}/mt. Her nominal hire sits inside the cost, so <b>TCE here is profit \u00f7 day with nothing added back</b> \u2014 unlike our own TCE above, which adds the daily hire on.</p></div></details>` : ''}
       </div>
     </div>
   `;
