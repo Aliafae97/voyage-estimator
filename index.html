@@ -195,8 +195,10 @@
   .tariffBox .tariffSwitch input{ width:15px; height:15px; margin:1px 0 0; flex:0 0 auto; }
   .tariffSwitch > span{ flex:1 1 auto; line-height:1.45; }
   .iconbtn.tariffBtn.on{ background:var(--strait); color:#fff; border-color:var(--strait); }
-  .optstack{ display:flex; flex-direction:column; gap:6px; }
-  .optstack label.scrubber{ width:100%; box-sizing:border-box; }
+  /* Scrubber and Eco sit side by side \u2014 two short labels stacked wasted a whole row, and they
+     wrap back to one each on a narrow screen. */
+  .optstack{ display:flex; flex-wrap:wrap; gap:6px; }
+  .optstack label.scrubber{ flex:1 1 0; min-width:132px; box-sizing:border-box; white-space:nowrap; }
   /* consumption detail, collapsed by default */
   .consdetails{ margin-top:16px; border:1px dashed var(--parchment-line); border-radius:5px; padding:10px 14px; }
   .consdetails summary{ cursor:pointer; font-family:'SFMono-Regular',Consolas,monospace; font-size:12px;
@@ -250,7 +252,12 @@
   .stat-row{ display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:10px; }
   /* The three figures the desk actually decides on — profit, TCE and the Worldscale benchmark —
      lead the results; everything else is supporting detail and sits underneath. */
-  .stat-row.bottom{ grid-template-columns:repeat(2,1fr); margin-bottom:12px; }
+  /* The per-leg cost is the thing Bader reads, so the leg total carries the weight and the
+     opening row at the load port is tinted to show it is not a sea leg. */
+  table.breakdown.legcost td.legtot{ font-weight:700; color:var(--ink); font-size:14px; }
+  table.breakdown.legcost tr.opening td{ background:#f6efdd; color:var(--text-mute); font-style:italic; }
+  table.breakdown.legcost tr.opening td.legtot{ font-style:normal; }
+  .stat-row.bottom{ grid-template-columns:repeat(3,1fr); margin-bottom:12px; }
   .stat.hero .sub{ font-size:10.5px; color:#9fb2bd; margin-top:4px; letter-spacing:.02em;
          font-family:'SFMono-Regular',Consolas,monospace; }
   .stat-row.bottom.wsrow{ grid-template-columns:repeat(2,1fr); }
@@ -335,6 +342,11 @@
         letter-spacing:.05em; color:var(--brass); background:#f2ead6; padding:4px 10px; }
   .portSearchOpt{ padding:6px 10px; font-size:13.5px; cursor:pointer; }
   .portSearchOpt:hover, .portSearchOpt.active{ background:#e9e0c8; }
+  /* Where the auto-filled figure came from, said plainly under it, so nobody has to open a panel
+     to know whether they are looking at our own history or a model of an agent's DA. */
+  .dutySrc{ font-size:10px; line-height:1.3; margin-top:3px; text-align:right; color:var(--text-mute); }
+  .dutySrc b{ color:#2c6a5c; font-weight:600; }
+  .dutySrc.wide{ color:#9a6d1f; }
   .portDutyInp{ width:100%; text-align:right; font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:14px; padding:6px 8px;
         border:1px solid var(--parchment-line); border-radius:4px; background:#fffdf8; color:var(--text-dark); }
 @page { size:A4 portrait; margin:15mm 14mm 16mm 14mm; }
@@ -462,18 +474,21 @@
           <option value="J19">J19 &middot; 20,000 DWT</option>
         </select>
       </div>
-      <div class="field">
+      <div class="field" style="grid-column:span 2;">
         <label id="fuelGradeNote">Main fuel: VLSFO</label>
         <div class="optstack">
           <label class="scrubber"><input type="checkbox" id="scrubber"> Scrubber fitted</label>
           <label class="scrubber"><input type="checkbox" id="eco"> Eco vessel</label>
         </div>
       </div>
-      <div class="field">
+      <!-- The vessel particulars are set by the size class and never shown. They are still real
+           inputs, because every port tariff reads them; hiding the wrapper keeps the model fed
+           while leaving nothing on screen to fill in. -->
+      <div class="field" style="display:none;">
         <label class="gtLabel">Gross Tonnage (GT)
           <button type="button" class="iconbtn partsBtn" id="partsBtn" title="Other vessel particulars">&#9881;</button>
         </label>
-        <input type="text" inputmode="decimal" class="numfmt" id="vessel_gt" value="29,500">
+        <input type="text" inputmode="decimal" class="numfmt" id="vessel_gt" value="30,000">
       </div>
 
       <div id="partsPanel" style="grid-column:1/-1; display:none;">
@@ -481,8 +496,10 @@
           <h4>Other vessel particulars</h4>
           <p class="partsNote" id="partsClassNote"></p>
           <div class="tariffGrid">
-            <div class="f" id="ntField"><label>Net Tonnage (NT)</label><input type="text" inputmode="decimal" class="numfmt" id="vessel_nt" value="13,000"></div>
+            <div class="f" id="ntField"><label>Net Tonnage (NT)</label><input type="text" inputmode="decimal" class="numfmt" id="vessel_nt" value="13,800"></div>
             <div class="f" id="loaField"><label>Length Overall (m)</label><input type="text" inputmode="decimal" class="numfmt" id="vessel_loa" value="183"></div>
+            <div class="f" id="beamField"><label>Extreme Beam (m)</label><input type="text" inputmode="decimal" class="numfmt" id="vessel_beam" value="32.2"></div>
+            <div class="f" id="draftField"><label>Summer Draft (m)</label><input type="text" inputmode="decimal" class="numfmt" id="vessel_draft" value="13.0"></div>
           </div>
           <p class="tariffNote" id="partsUseNote">Net tonnage drives light dues at ports that charge on NRT. Length drives
             berth hire and tug or pilot services at ports that charge on LOA, such as Pasir Gudang.</p>
@@ -9357,7 +9374,7 @@ const PORT_TARIFF = {
   //   gtday = per GT per day alongside move  = per pilot/tug movement (fixed + per GT)
   //   cargo = per tonne of cargo
   batam: {
-    name:"Batam / Kabil (liquid bulk)", ccy:"IDR", fx:15391, fxDate:"Oct 2023",
+    name:"Batam / Kabil (liquid bulk)", ccy:"IDR", fx:17900, fxDate:"Sep 2026", fxDA:15391, fxDADate:"Oct 2023",
     dayStep:0.25, moves:2, cont:10,
     source:"ISS DA HA00066539 \u2014 MT Super G, GT 30,075, Oct 2023",
     lines:[
@@ -9396,7 +9413,7 @@ const PORT_TARIFF = {
   //   escort tug and pilot assistance  charged on LOA for an estimated 2 hours each, and only
   //     when the vessel sails at over 12 m draft - hence the Deep-draft switch in the panel.
   pasir_gudang: {
-    name:"Pasir Gudang, Johor", ccy:"MYR", fx:3.994, fxDate:"Oct 2026",
+    name:"Pasir Gudang, Johor", ccy:"MYR", fx:4.07, fxDate:"Oct 2026", fxDA:3.994, fxDADate:"Oct 2026",
     dayStep:0, moves:2, cont:10, loaRound:"ceil",
     source:"ISS PDA HA00167722 + DA HA00165722 \u2014 Pasir Gudang, Sep/Oct 2026",
     lines:[
@@ -9426,7 +9443,7 @@ const PORT_TARIFF = {
   // carried flat at their 2026 amounts and together are 40% of a call, so this row will drift for
   // a vessel far from MR size.
   tanjung_langsat: {
-    name:"Tanjung Langsat (TLP / Dialog), Johor", ccy:"MYR", fx:4.06, fxDate:"Jun 2026",
+    name:"Tanjung Langsat (TLP / Dialog), Johor", ccy:"MYR", fx:4.07, fxDate:"Oct 2026", fxDA:4.06, fxDADate:"Jun 2026",
     dayStep:0, moves:2, cont:10, loaRound:"ceil",
     source:"ISS DAs HA00024095 (2022, rates stated) + HA00157453 (2026, current amounts)",
     lines:[
@@ -9467,7 +9484,7 @@ const PORT_TARIFF = {
   // Harbour dues are billed per 100 GT or part thereof - the DA shows 28,381 GT rounded up to 284
   // units - so the tool rounds up the same way.
   port_klang: {
-    name:"Port Klang, Selangor", ccy:"MYR", fx:3.86, fxDate:"Jan 2026",
+    name:"Port Klang, Selangor", ccy:"MYR", fx:4.07, fxDate:"Oct 2026", fxDA:3.86, fxDADate:"Jan 2026",
     dayStep:0, moves:2, cont:10,
     // Wharfage is the biggest line here and it is driven entirely by the parcel worked at this
     // port, which the tool cannot know. 15,000 mt is a sensible starting point for a part cargo,
@@ -9500,7 +9517,7 @@ const PORT_TARIFF = {
   // shown, so they are carried at their amounts and will not scale for a much larger vessel.
   // Agency is at the 2024 rate of RM 4,000; the Peninsular ports moved to RM 4,240 by 2026.
   bintulu: {
-    name:"Bintulu, Sarawak", ccy:"MYR", fx:4.714, fxDate:"Feb 2024",
+    name:"Bintulu, Sarawak", ccy:"MYR", fx:4.07, fxDate:"Oct 2026", fxDA:4.714, fxDADate:"Feb 2024",
     dayStep:0, moves:2, cont:10, loaRound:"ceil",
     source:"ISS DA HA00082137 \u2014 MT NCC Maha, GT 29,736, LOA 183.3 m, Feb 2024",
     lines:[
@@ -9539,7 +9556,7 @@ const PORT_TARIFF = {
   // default. Agency is at the 2022 rate of RM 4,000 and the hub fee was USD 250, not the 270
   // charged elsewhere.
   lahad_datu: {
-    name:"Lahad Datu (POIC), Sabah", ccy:"MYR", fx:4.17, fxDate:"Apr 2022",
+    name:"Lahad Datu (POIC), Sabah", ccy:"MYR", fx:4.07, fxDate:"Oct 2026", fxDA:4.17, fxDADate:"Apr 2022",
     dayStep:0, moves:2, cont:10,
     cargoDefault:10000, cargoConfirm:true,
     source:"ISS DA HA00020422 \u2014 MT UOG Tinos, GT 29,124, NT 11,608, Apr 2022",
@@ -9581,7 +9598,7 @@ const PORT_TARIFF = {
   // derived by division, and the tonnage is confirmed on every call anyway. If the real parcel was
   // 10,000 mt then this rate is a third too low and should be changed to 3.45.
   sandakan: {
-    name:"Sandakan, Sabah", ccy:"MYR", fx:4.33, fxDate:"Sep 2022",
+    name:"Sandakan, Sabah", ccy:"MYR", fx:4.07, fxDate:"Oct 2026", fxDA:4.33, fxDADate:"Sep 2022",
     dayStep:0, moves:2, cont:10,
     cargoDefault:15000, cargoConfirm:true,
     source:"ISS DA HA00032418 \u2014 MT Hafnia Amethyst, GT 23,676, NT 10,252, Sep 2022",
@@ -9620,7 +9637,7 @@ const PORT_TARIFF = {
   // Fresh water is on the DA and is kept, but it is a service the ship ordered, not a port due -
   // drop the line if the vessel is not taking water.
   kuantan: {
-    name:"Kuantan (Tanjung Gelang), Pahang", ccy:"MYR", fx:3.90, fxDate:"Nov 2019",
+    name:"Kuantan (Tanjung Gelang), Pahang", ccy:"MYR", fx:4.07, fxDate:"Oct 2026", fxDA:3.90, fxDADate:"Nov 2019",
     dayStep:0, moves:2, cont:10, loaRound:"ceil",
     cargoDefault:10000, cargoConfirm:true,
     source:"ISS DA HA00000262 \u2014 MT Ardmore Encounter, GT 30,063, NT 13,738, Nov 2019",
@@ -9658,7 +9675,7 @@ const PORT_TARIFF = {
   // Towage is flat with no size basis shown (2,200 + 1,100 for two tugs, each plus 11.25%).
   // Hub fee is USD 270 at this date, as at Bintulu, not the 250 on the older Sabah DAs.
   lumut: {
-    name:"Lumut, Perak", ccy:"MYR", fx:4.72733, fxDate:"Feb 2024",
+    name:"Lumut, Perak", ccy:"MYR", fx:4.07, fxDate:"Oct 2026", fxDA:4.72733, fxDADate:"Feb 2024",
     dayStep:0, moves:2, cont:10,
     cargoDefault:10550, cargoConfirm:true,
     source:"ISS DA HA00081467 \u2014 MT Caroline, GT 28,381, NT 12,598, Feb 2024",
@@ -9693,7 +9710,7 @@ const PORT_TARIFF = {
   // Pilotage is RM 8,814 for both movements with no basis stated beyond "ADDITIONAL GRT ON BOTH
   // SERVICES", so it is carried flat per movement and will not scale with vessel size.
   kunak: {
-    name:"Kunak (SPSB oil jetty), Sabah", ccy:"MYR", fx:4.20, fxDate:"Dec 2022",
+    name:"Kunak (SPSB oil jetty), Sabah", ccy:"MYR", fx:4.07, fxDate:"Oct 2026", fxDA:4.20, fxDADate:"Dec 2022",
     dayStep:0, moves:2, cont:10,
     cargoDefault:8000, cargoConfirm:true,
     source:"ISS DA HA00039323 \u2014 MT Rarity, GT 30,070, NT 11,688, Dec 2022",
@@ -9737,7 +9754,7 @@ const PORT_TARIFF = {
   // Mopping / gang / tank cleaning at USD 8,500 was ordered by GHS, not a port due - delete that
   // line if the service is not taken. It is 10% of the call.
   dumai: {
-    name:"Dumai, Sumatra", ccy:"IDR", fx:17543.86, fxDate:"Sep 2026",
+    name:"Dumai, Sumatra", ccy:"IDR", fx:17900, fxDate:"Sep 2026", fxDA:17543.86, fxDADate:"Sep 2026",
     dayStep:0, moves:2, cont:10,
     source:"ISS PDA HA00166649 \u2014 MT Pacific Adventure at Dumai, GT 27,152, Sep 2026",
     lines:[
@@ -9781,7 +9798,7 @@ const PORT_TARIFF = {
   // Mopping / gang / tank cleaning at USD 8,500 was ordered by GHS, not a port due - delete that
   // line if the service is not taken. It is 10% of the call.
   lubuk_gaung: {
-    name:"Lubuk Gaung, Sumatra", ccy:"IDR", fx:17543.86, fxDate:"Sep 2026",
+    name:"Lubuk Gaung, Sumatra", ccy:"IDR", fx:17900, fxDate:"Sep 2026", fxDA:17543.86, fxDADate:"Sep 2026",
     dayStep:0, moves:2, cont:10,
     source:"ISS PDA HA00166649 \u2014 MT Pacific Adventure at Dumai, GT 27,152, Sep 2026",
     lines:[
@@ -9835,7 +9852,7 @@ const PORT_TARIFF = {
   // Delete whichever do not apply to your call - fire guards are really 3 men x IDR 200,000 per day
   // plus 11%, so a long stay should carry more than the flat figure here.
   belawan: {
-    name:"Belawan, Sumatra", ccy:"IDR", fx:16308.9, fxDate:"Mar 2026",
+    name:"Belawan, Sumatra", ccy:"IDR", fx:17900, fxDate:"Sep 2026", fxDA:16308.9, fxDADate:"Mar 2026",
     dayStep:0, moves:2, cont:10,
     source:"ISS DAs HA00150620 (MT Lysandra, Mar 2026) + HA00142911 (MT Henda, Jan 2026)",
     lines:[
@@ -9879,7 +9896,7 @@ const PORT_TARIFF = {
   // Pilot assistant is charged because her draft exceeded 8.5 m; drop that line for a light ship.
   // The water quality certificate was a one-off on this call.
   padang: {
-    name:"Padang (Teluk Bayur), Sumatra", ccy:"IDR", fx:15141.4, fxDate:"Aug 2023",
+    name:"Padang (Teluk Bayur), Sumatra", ccy:"IDR", fx:17900, fxDate:"Sep 2026", fxDA:15141.4, fxDADate:"Aug 2023",
     dayStep:0, moves:2, cont:10,
     source:"ISS DA HA00062985 \u2014 MT Artemis Ocean, GT 29,303 (billed on 29,211), Aug 2023",
     lines:[
@@ -9926,7 +9943,7 @@ const PORT_TARIFF = {
   // and sure enough his actuals come in under his own formulas while the 2022 figures match them.
   // Net result: 2023 reads -0.85%, 2022 reads +0.12%.
   balikpapan: {
-    name:"Balikpapan, Kalimantan", ccy:"IDR", fx:15140.6, fxDate:"May 2023",
+    name:"Balikpapan, Kalimantan", ccy:"IDR", fx:17900, fxDate:"Sep 2026", fxDA:15140.6, fxDADate:"May 2023",
     dayStep:0, moves:2, cont:10,
     source:"ISS DAs HA00052207 (MT Artemis Ocean, May 2023) + HA00025149 (MT Gloria, Jun 2022)",
     lines:[
@@ -9970,7 +9987,7 @@ const PORT_TARIFF = {
   // correctly with GT, days and movements. If the rupiah moves a long way, revisit them - the
   // underlying tariff is dollar-denominated.
   pontianak: {
-    name:"Pontianak, Kalimantan", ccy:"IDR", fx:17301.1, fxDate:"Sep 2026",
+    name:"Pontianak, Kalimantan", ccy:"IDR", fx:17900, fxDate:"Sep 2026", fxDA:17301.1, fxDADate:"Sep 2026",
     dayStep:0, moves:3, cont:10,
     source:"ISS DA HA00165726 \u2014 MT Pacific Infinity at Pontianak/Kijing, GT 29,998, Sep 2026",
     lines:[
@@ -10013,7 +10030,7 @@ const PORT_TARIFF = {
   // correctly with GT, days and movements. If the rupiah moves a long way, revisit them - the
   // underlying tariff is dollar-denominated.
   kijing: {
-    name:"Kijing (Pontianak), Kalimantan", ccy:"IDR", fx:17301.1, fxDate:"Sep 2026",
+    name:"Kijing (Pontianak), Kalimantan", ccy:"IDR", fx:17900, fxDate:"Sep 2026", fxDA:17301.1, fxDADate:"Sep 2026",
     dayStep:0, moves:3, cont:10,
     source:"ISS DA HA00165726 \u2014 MT Pacific Infinity at Pontianak/Kijing, GT 29,998, Sep 2026",
     lines:[
@@ -10056,7 +10073,7 @@ const PORT_TARIFF = {
   // she exceeded 180 m, and the quarantine checking arrangement at USD 1,015 is the largest of the
   // one-off service lines. Delete either when it does not apply.
   kuala_tanjung: {
-    name:"Kuala Tanjung, Sumatra", ccy:"IDR", fx:15289.1, fxDate:"Oct 2023",
+    name:"Kuala Tanjung, Sumatra", ccy:"IDR", fx:17900, fxDate:"Sep 2026", fxDA:15289.1, fxDADate:"Oct 2023",
     dayStep:0, moves:2, cont:10,
     source:"ISS DA HA00065493 \u2014 MT Wan Cheng, GT 26,914, NT 14,288, Oct 2023",
     lines:[
@@ -10116,7 +10133,7 @@ const PORT_TARIFF = {
   // no basis given; it is carried per GT so it at least moves with ship size. Light dues decode
   // exactly at GT x 0.034 x kurs. VTS is billed on three movements, not four, so it is flat.
   pulau_laut: {
-    name:"Pulau Laut (Kotabaru), Kalimantan", ccy:"IDR", fx:17342.0, fxDate:"Jun 2026",
+    name:"Pulau Laut (Kotabaru), Kalimantan", ccy:"IDR", fx:17900, fxDate:"Sep 2026", fxDA:17342.0, fxDADate:"Jun 2026",
     dayStep:0, moves:4, cont:10,
     source:"ISS DAs HA00158454 (MT YQ Harmony, GT 27,357, Jun 2026) + HA00147577 (MT High Voyager, GT 29,935, Feb 2026)",
     lines:[
@@ -10257,6 +10274,54 @@ const PORT_TARIFF = {
       {l:"Free pratique / port health", b:"call", usd:100}
     ]
   },
+  // ---- TOAMASINA (Tamatave), Madagascar ----
+  // ISS DA HA00162940, MT Blossom Glory, GT 30,042 / NT 13,312 / LOA 183 m, Sep 2026, 106 h alongside,
+  // tied out against SPAT's own tariff book (Port Tariffs Volume 3).
+  //
+  // THE DRIVER IS A GEOMETRIC VOLUME, NOT TONNAGE. SPAT Article 1.1: V = LOA x extreme beam x
+  // summer draft, and pilotage, towage, docking and tanker parking are all quoted per 100 m3 of it.
+  // Annex 1 adds that the agent declares V off the ship's classification and freeboard certificates,
+  // so V is a confirm field: it defaults to LOA x beam x draft from the vessel particulars, and the
+  // figure on the agent's DA overrides it. Blossom Glory was declared at 70,100 m3.
+  //
+  // TWO BERTHS, TWO TARIFFS. SPAT prices an oil tanker at the tanker oil jetty quite differently
+  // from a liner ship at the ordinary dock, and the difference is large:
+  //   towing      Art 3.1 liner EUR 5.363 /100m3/manoeuvre   vs  Art 3.2 oil tanker EUR 11.809 (50-100k m3)
+  //   docking     Art 4.1 cargo EUR 1.021 /100m3/operation   vs  Art 4.1 oil tanker EUR 1.532
+  //   parking     Art 5.1 ordinary dock EUR 0.091 /m/hour    vs  Art 5.4 tanker EUR 7.545 /100m3/24h
+  // The DA on file was billed throughout on the LINER / CARGO VESSEL column, which is why that is
+  // the default mode and the one that reproduces it to the cent. Article 5.0 lists "liquid bulk"
+  // among the ordinary liner ships and keeps the "tanker oil jetty" separate, so a vegetable oil
+  // call reading on the liner column is consistent \u2014 but a CPP call at the oil jetty would not be.
+  // Switch the mode to see that exposure; on this call it is roughly another USD 39,000.
+  // FX: one pair of rates, EUR/USD 1.141465 and MGA/EUR 4,931.71 (the agent's MGA/USD 4,320.51 is
+  // exactly 4,931.71 / 1.141465, so his two quoted rates agree).
+  // The berth dues comment on the DA ends "= USD 1088.78" while the amount billed is USD 2,417.92;
+  // the amount matches EUR 0.091 x LOA x hours + 20% VAT exactly, so the comment is stale, not the rate.
+  toamasina: {
+    name:"Toamasina (Tamatave), Madagascar", ccy:"EUR", fx:0.8922, fxDate:"Oct 2026", fxDA:0.87606716, fxDADate:"Sep 2026",
+    dayStep:0, moves:2, cont:10,
+    fields:[{k:"vol", l:"Declared volume V (m\u00b3) \u2014 LOA \u00d7 beam \u00d7 summer draft", fromVol:1, confirm:true}],
+    modes:[{k:"liner", l:"Ordinary dock \u2014 liner / liquid bulk rates (as billed on the DA)", moves:2},
+           {k:"oiljetty", l:"Tanker oil jetty \u2014 SPAT oil tanker rates (Art 3.2 / 4.1 / 5.4)", moves:2}],
+    source:"ISS DA HA00162940 (MT Blossom Glory, GT 30,042, NT 13,312, LOA 183 m, V 70,100 m\u00b3, Sep 2026) + SPAT Port Tariffs Volume 3",
+    lines:[
+      {l:"Towage in + out \u2014 EUR 5.363 per 100 m\u00b3 per manoeuvre", b:"field", f:"vol", loc:0.05363, unit:"m\u00b3", perMove:true, m:"liner"},
+      {l:"Towage in + out \u2014 oil tanker, EUR 11.809 per 100 m\u00b3 per manoeuvre", b:"field", f:"vol", loc:0.11809, unit:"m\u00b3", perMove:true, m:"oiljetty"},
+      {l:"Pilotage in + out \u2014 EUR 1.532 per 100 m\u00b3 per manoeuvre", b:"field", f:"vol", loc:0.01532, unit:"m\u00b3", perMove:true},
+      {l:"Berth dues \u2014 ordinary dock, EUR 0.091 per metre per hour (incl 20% VAT)", b:"loahr", loc:0.1092, m:"liner"},
+      {l:"Tanker parking \u2014 EUR 7.545 per 100 m\u00b3 per 24 h (incl 20% VAT)", b:"field", f:"vol", loc:0.09054, unit:"m\u00b3", perDay:true, dayRound:"ceil", m:"oiljetty"},
+      {l:"Port dues \u2014 EUR 1.405 per 100 m\u00b3 (incl 20% VAT)", b:"field", f:"vol", loc:0.016860, unit:"m\u00b3"},
+      {l:"Mooring + unmooring \u2014 EUR 1.021 per 100 m\u00b3 per operation", b:"field", f:"vol", loc:0.01021, unit:"m\u00b3", perMove:true, m:"liner"},
+      {l:"Mooring + unmooring \u2014 oil tanker, EUR 1.532 per 100 m\u00b3 per operation", b:"field", f:"vol", loc:0.01532, unit:"m\u00b3", perMove:true, m:"oiljetty"},
+      {l:"Tonnage dues \u2014 MGA 200 per NRT", b:"nt", loc:0.0405539},
+      {l:"Government tax \u2014 communal fees, MGA 1,200,000 per call", b:"call", loc:243.32331},
+      {l:"Vessel clearance \u2014 customs, maritime, immigration, health, security (MGA 660,000)", b:"call", loc:133.82782},
+      {l:"Veterinary + disinfection \u2014 MGA 100,000 per day", b:"day", loc:20.276942, dayRound:"ceil"},
+      {l:"Agency fee", b:"call", usd:2000},
+      {l:"Processing / hub fee", b:"call", usd:270}
+    ]
+  },
   mombasa: {
     name:"Mombasa, Kenya", ccy:"USD", fx:1, fxDate:"Aug 2026",
     dayStep:0, moves:2, cont:10, loaRound:"ceil",
@@ -10284,7 +10349,7 @@ const PORT_TARIFF = {
     ]
   },
   fujairah: {
-    name:"Fujairah", ccy:"AED", fx:3.65006, fxDate:"Sep 2026",
+    name:"Fujairah", ccy:"AED", fx:3.6725, fxDate:"Oct 2026", fxDA:3.65006, fxDADate:"Sep 2026",
     dayStep:0, moves:2, cont:10,
     source:"ISS DAs HA00165201 (berthed, MT Pacific Spirit, GT 30,101, Sep 2026) + HA00125379 (offshore bunkers, MT Rigel, GT 29,438, Jun 2025)",
     modeDefault:"berth",
@@ -10343,7 +10408,7 @@ const PORT_TARIFF = {
   //                      T_loc  = local-currency cargo dues per tonne (0 if charterer pays)
   // dayStep = how the terminal rounds part days (0.25 = quarter days, 1 = whole etmal, 0 = pro rata)
   //
-  // , new_port: { name:"Port name (terminal)", ccy:"IDR", fx:16000, fxDate:"Oct 2026",
+  // , new_port: { name:"Port name (terminal)", ccy:"IDR", fx:17900, fxDate:"Sep 2026", fxDA:16000, fxDADate:"Oct 2026",
   //               F_usd:0, G_usd:0, F_loc:0, G_loc:0, D_loc:0, T_loc:0,
   //               dayStep:1, moves:2, cont:10, source:"PDA ref" }
 };
@@ -10363,6 +10428,17 @@ function tariffModeDefault(t){
 function computeTariff(portId, opts){
   const t = PORT_TARIFF[portId];
   if(!t) return null;
+  // PLANNING RATES, mid-market as at 15-16 October 2026:
+  //   MYR 4.07   (OFX 4.0677, fxrates 4.0825)
+  //   IDR 17,900 (OFX 17,804 on 14 Oct, valutafx 18,015 on 16 Oct \u2014 the rupiah was sliding)
+  //   AED 3.6725 (the official peg; the Fujairah DA converted at 3.65006, which is agent spread)
+  //   EUR 0.8922 per USD (ECB reference 1.1208 USD/EUR, 15 Oct 2026)
+  // Re-check these once a quarter; a DA check is unaffected because it passes fxDA instead.
+  // A port carries TWO rates. fx is the planning rate \u2014 one stable figure per currency, so the
+  // same RM 4,240 agency fee does not become $897 at one Malaysian port and $1,062 at another
+  // just because their DAs were written four years apart. fxDA is the rate the DA itself used,
+  // and a DA check passes it in through opts.fx so the model still reproduces that invoice to
+  // the cent. The spread before this was MYR 3.86-4.71 and IDR 15,140-17,544 across the ports.
   const fx    = opts.fx>0 ? opts.fx : t.fx;
   // Some authorities bill on a rounded tonnage. Tanzania Ports Authority rounds GRT UP to the
   // next 100 on every marine line: its invoice for a 25,087 GT ship reads "25100.00 GRT".
@@ -10386,10 +10462,17 @@ function computeTariff(portId, opts){
   // A port may bill on a quantity the voyage inputs do not carry — Dar es Salaam stevedores on
   // CUBIC METRES, not tonnes. The port declares the field, the row carries the figure, and a
   // blank falls back to a stated multiple of the cargo so the estimate is never silently zero.
+  // SPAT (Toamasina) Article 1.1: V = LOA x extreme beam x summer draft. The annex adds that the
+  // agent declares it off the ship's classification and freeboard certificates, which is why an
+  // agent's V can differ from what a database gives \u2014 so it stays overridable.
+  const volGeom = (opts.loa||0) * (opts.beam||0) * (opts.draft||0);
   const fieldVals = {};
   (t.fields||[]).forEach(f=>{
     const v = (opts.fields||{})[f.k];
-    fieldVals[f.k] = (v>0) ? v : (f.fromCargo ? (opts.cargo||0)*f.fromCargo : (f.dflt||0));
+    fieldVals[f.k] = (v>0) ? v
+                   : f.fromCargo ? (opts.cargo||0)*f.fromCargo
+                   : f.fromVol   ? volGeom*f.fromVol
+                   : (f.dflt||0);
   });
   // Malaysian ports bill on whole metres of length, rounded UP: a Bintulu DA states "VESSEL LOA
   // 184 M" for a 183.3 m ship, and on the same rule Pasir Gudang's Ocean Selene reads exactly
@@ -10484,9 +10567,17 @@ function computeTariff(portId, opts){
           + ' \u00d7 ' + stepH + 'h beyond ' + freeH + 'h'
         : 'nil \u2014 inside the ' + freeH + ' h allowance';
     } else if(ln.b==='field'){
+      // Toamasina prices pilotage, towage and docking per 100 m3 AND per manoeuvre, so a field
+      // line can run once per movement in the same way a GT line can.
       const q = fieldVals[ln.f]||0;
-      usd = (ln.usd||0)*q; loc = (ln.loc||0)*q;
-      basis = (ln.usd ? rate(ln.usd) : fmt(ln.loc||0,4)) + ' \u00d7 ' + fmt(q) + ' ' + (ln.unit||'');
+      const mv = ln.perMove ? moves : 1;
+      // Tanker parking at Toamasina is per 100 m3 per 24 h, so a field line can also run by the day.
+      const dq = ln.perDay ? ((ln.dayRound==='ceil') ? Math.ceil(days)
+                           : (ln.dayRound==='floor') ? Math.floor(days) : days) : 1;
+      usd = (ln.usd||0)*q*mv*dq; loc = (ln.loc||0)*q*mv*dq;
+      basis = (ln.usd ? rate(ln.usd) : fmt(ln.loc||0,5)) + ' \u00d7 ' + fmt(q) + ' ' + (ln.unit||'')
+            + (ln.perMove ? ' \u00d7 ' + mv + ' mov' : '')
+            + (ln.perDay ? ' \u00d7 ' + fmt(dq,2) + ' d' : '');
     } else if(ln.b==='cargo'){
       usd = (ln.usd||0)*cargo; loc = (ln.loc||0)*cargo;
       basis = (ln.usd ? rate(ln.usd) : fmt(ln.loc||0,4)) + ' \u00d7 ' + fmt(cargo) + ' mt';
@@ -10514,6 +10605,11 @@ function computeTariff(portId, opts){
       basis = '(' + c + fmt(ln.usd||ln.loc||0,2) + '\u00d7' + u1 + ' + ' + c + fmt(ln.usd2||ln.loc2||0,2) + '\u00d7' + u2
             + ') units of 100 GT' + (mult>1 ? ' \u00d7 ' + mult + ' tugs' : '')
             + (ln.perMove ? ' \u00d7 ' + mv + ' ' + (ln.unit||'mov') : '');
+    } else if(ln.b==='day'){
+      // a flat charge for every day of the stay \u2014 Toamasina's veterinary and disinfection fee
+      const d = (ln.dayRound==='ceil') ? Math.ceil(days) : (ln.dayRound==='floor' ? Math.floor(days) : days);
+      usd = (ln.usd||0)*d; loc = (ln.loc||0)*d;
+      basis = (ln.usd ? rate(ln.usd) : fmt(ln.loc||0,2)) + ' \u00d7 ' + fmt(d,2) + ' d';
     } else if(ln.b==='nt'){
       // light dues and the like are charged on NET tonnage, not gross
       usd = (ln.usd||0)*nt; loc = (ln.loc||0)*nt;
@@ -10573,6 +10669,11 @@ function vesselGT(){ return parseNum(document.getElementById('vessel_gt').value)
 // so all three particulars are kept. They all come off the same Q88 page.
 function vesselNT(){ return parseNum(document.getElementById('vessel_nt').value); }
 function vesselLOA(){ return parseNum(document.getElementById('vessel_loa').value); }
+// Beam and summer draft are only needed where a port bills on the ship's GEOMETRIC VOLUME rather
+// than on tonnage. Toamasina is the case on file: SPAT Article 1.1 defines V = LOA x extreme beam
+// x summer draft, and that V drives pilotage, towage, docking and parking there.
+function vesselBeam(){ return parseNum(document.getElementById('vessel_beam').value); }
+function vesselDraft(){ return parseNum(document.getElementById('vessel_draft').value); }
 // Typical GT by size class, used when the class is changed — overwrite it with the real figure
 // from the vessel's Q88 whenever you have one.
 // Typical particulars for each size class, so the tool gives a sound answer the moment a class is
@@ -10583,13 +10684,89 @@ function vesselLOA(){ return parseNum(document.getElementById('vessel_loa').valu
 // The picker offers only the four classes GHS actually trades: MR2 and MR1 on the spot side, the
 // 5-year time-chartered newbuildings, and J19. The wider brackets stay in the tables below so
 // nothing breaks and any of them can be put back in the list with a single <option> line.
-const CLASS_GT = { J19:13700, HANDY:13500, MR1:23000, MR2:29500, NB_MR2:30100, LR1:42000, LR2:62000,
+// MR2 is the class GHS actually trades, so its particulars are not a textbook figure: they are the
+// MEDIAN of every ship on the DAs in this file in the 46,000-49,000 DWT band - 21 vessels, GT
+// 29,032 to 30,101, median 29,998. NT and LOA come from the same set (NT 11,608-14,416, median
+// 13,798; LOA median 182.9, with 183.0 the single most common figure). Anchors: Blossom Glory
+// GT 30,042 = 47,240 DWT, Pacific Spirit GT 30,101. Picking MR2 therefore loads a real median
+// ship and nobody has to type a particular \u2014 which is the point.
+const CLASS_GT = { J19:13700, HANDY:13500, MR1:23000, MR2:30000, NB_MR2:30100, LR1:42000, LR2:62000,
                    AFRAMAX:62000, SUEZMAX:82000, VLCC:162000 };
-const CLASS_NT = { J19:6400, HANDY:6300, MR1:11000, MR2:13000, NB_MR2:13600, LR1:22000, LR2:36000,
+const CLASS_NT = { J19:6400, HANDY:6300, MR1:11000, MR2:13800, NB_MR2:13800, LR1:22000, LR2:36000,
                    AFRAMAX:36000, SUEZMAX:53000, VLCC:110000 };
 const CLASS_LOA = { J19:155, HANDY:150, MR1:176, MR2:183, NB_MR2:183, LR1:228, LR2:250,
                     AFRAMAX:250, SUEZMAX:274, VLCC:333 };
+const CLASS_BEAM  = { J19:26, HANDY:24, MR1:31, MR2:32.2, NB_MR2:32.2, LR1:32.2, LR2:44,
+                      AFRAMAX:44, SUEZMAX:48, VLCC:60 };
+const CLASS_DRAFT = { J19:9.5, HANDY:9.0, MR1:11.0, MR2:13.0, NB_MR2:13.0, LR1:12.6, LR2:14.9,
+                      AFRAMAX:14.9, SUEZMAX:16.1, VLCC:22.5 };
 
+// ---------- What these ports ACTUALLY cost, from GHS's own voyage records ----------
+// 428 port calls taken from 62 voyage performance sheets. Each entry is the MEDIAN of the actual
+// port charges billed, not an average: one Suez transit or one demurrage-heavy call drags an
+// average to a figure no real call ever lands on, and the median ignores it. p25/p75 are the
+// range the middle half of calls fell in \u2014 a wide band is the port telling you a single number
+// will not do.
+//
+// WHAT THE FIGURES ASSUME. Every voyage in this history is a full MR cargo: across 408 calls the
+// cargo runs P10 41,987 / median 45,219 / P90 46,425 mt. So these are MR figures at about
+// 45,000 mt, and they are NOT valid for J19 (20,000 dwt), which pays far less in GT-based dues.
+// The tool only offers them for an MR-class ship.
+//
+// WHY A FLAT FIGURE IS ENOUGH. Fitting cost = fixed + rate x days at every port with six or more
+// calls, R\u00b2 came out between 0.00 and 0.38 at fifteen of seventeen ports \u2014 Port Klang 0.00,
+// Salalah 0.00, Singapore 0.01, Izmir 0.01, Adabiya 0.02, Suez 0.02. Staying twice as long costs
+// about the same, because the money is pilotage, towage, agency and dues on GT, all charged per
+// call. Only Port Sudan (R\u00b2 0.70) and Pasir Gudang (R\u00b2 0.38, 49 calls) earn a day rate, and
+// those two carry fix + perDay instead of a flat median.
+//
+// These are ACTUALS. An agent's PDA is an estimate and tends to sit above what is finally settled,
+// so for a budget figure the history is the more honest number.
+const PORT_HISTORY = {
+  pasir_gudang:{n:49,med:15845,p25:12171,p75:18208,days:3.27,fix:9363,perDay:1622,r2:0.38},
+  singapore:{n:34,med:1647,p25:1436,p75:1802,days:0.67},
+  lubuk_gaung:{n:34,med:35455,p25:34703,p75:37433,days:2.2},
+  jeddah:{n:25,med:24109,p25:16111,p75:28517,days:5.35},
+  djibouti:{n:24,med:12470,p25:11544,p75:13624,days:1.88},
+  adabiya:{n:22,med:48837,p25:47986,p75:57401,days:4.62},
+  suez:{n:21,med:261060,p25:234553,p75:266756,days:1.0},
+  port_klang:{n:20,med:16184,p25:13114,p75:21139,days:3.77},
+  izmit:{n:17,med:33298,p25:31469,p75:35168,days:3.78},
+  mersin:{n:15,med:27535,p25:25094,p75:28974,days:6.8},
+  izmir:{n:13,med:18942,p25:18673,p75:20483,days:3.1},
+  salalah:{n:10,med:12216,p25:11679,p75:12341,days:2.38},
+  belawan:{n:8,med:42544,p25:33483,p75:55813,days:6.26},
+  aden:{n:8,med:58190,p25:50318,p75:67204,days:1.76},
+  port_sudan:{n:6,med:80887,p25:65341,p75:97867,days:3.81,fix:8626,perDay:16805,r2:0.7},
+  sandakan:{n:6,med:21533,p25:19821,p75:21645,days:2.03},
+  balikpapan:{n:6,med:45769,p25:44594,p75:46575,days:3.55},
+  mombasa:{n:5,med:29522,p25:29395,p75:31930,days:2.92},
+  tanjung_langsat:{n:5,med:11209,p25:10417,p75:12905,days:4.6},
+  bandar_imam_khomeini:{n:5,med:108066,p25:66094,p75:129655,days:12.86},
+  pulau_laut:{n:5,med:53349,p25:51064,p75:54556,days:2.88},
+  tartous:{n:4,med:35688,p25:32843,p75:38584,days:7.82},
+  patras:{n:3,med:20085,p25:19079,p75:22647,days:1.49},
+  dar_es_salaam:{n:2,med:116780,p25:113605,p75:119955,days:15.98},
+  toamasina:{n:2,med:16515,p25:14691,p75:18340,days:5.21},
+  bandar_abbas:{n:1,med:99377,p25:99377,p75:99377,days:19.98},
+  odessa:{n:1,med:67306,p25:67306,p75:67306,days:2.8},
+  lahad_datu:{n:1,med:18388,p25:18388,p75:18388,days:2.17},
+  batam:{n:1,med:28228,p25:28228,p75:28228,days:5.88},
+  kuantan:{n:1,med:25587,p25:25587,p75:25587,days:1.9}
+};
+// The history is an MR record, so it is only offered for an MR-class ship.
+function historyApplies(){
+  const vt = document.getElementById('vessel_type').value;
+  const ref = VESSEL_REF[vt];
+  return !!(ref && ref.sizeClass === 'MR');
+}
+// The figure this port is worth on the day count entered, where days matter, else its median.
+function historyDuty(port, days){
+  const h = PORT_HISTORY[port];
+  if(!h) return null;
+  if(h.fix !== undefined && days > 0) return Math.max(0, h.fix + h.perDay*days);
+  return h.med;
+}
 const PORT_DUTY_ACTUAL = {
   dar_es_salaam: 208284,
   jizan: 152423,
@@ -11028,7 +11205,7 @@ function renderRotation(){
       <td><input type="number" data-i="${i}" class="daysInp" value="${call.days||''}" placeholder="0" step="0.5" min="0"></td>
       <td><input type="text" inputmode="decimal" data-i="${i}" class="portDutyInp numfmt" value="${call.portDuty ? fmtNumStr(call.portDuty) : ''}" placeholder="0"></td>
       <td class="rowbtns">
-        ${PORT_TARIFF[call.port] ? `<button class="iconbtn tariffBtn ${call.tariffOpen?'on':''}" data-i="${i}" title="Port dues detail">\u2699</button>` : ''}
+
         <button class="iconbtn moveUp" data-i="${i}" title="Move up">↑</button>
         <button class="iconbtn moveDown" data-i="${i}" title="Move down">↓</button>
         <button class="iconbtn danger removeRow" data-i="${i}" title="Remove">✕</button>
@@ -11151,8 +11328,11 @@ function renderRotation(){
   tbody.querySelectorAll('.daysInp').forEach(el=>el.onchange = e=>{
     const i = +e.target.dataset.i;
     rotation[i].days = parseFloat(e.target.value)||0;
-    // A port on the tariff model charges by the day, so its dues move with this field.
-    if(applyTariffToRow(i)) renderRotation();
+    // Pasir Gudang and Port Sudan are priced from our history as fix + rate x days, and a port on
+    // the tariff model charges by the day too, so both move with this field.
+    const h = PORT_HISTORY[rotation[i].port];
+    if(h && h.fix!==undefined && historyApplies()){ suggestPortDutyForRow(i); renderRotation(); }
+    else if(applyTariffToRow(i)) renderRotation();
   });
   tbody.querySelectorAll('.portDutyInp').forEach(el=>el.onchange = e=>{ rotation[+e.target.dataset.i].portDuty = parseNum(e.target.value); });
   tbody.querySelectorAll('.moveUp').forEach(el=>el.onclick = e=>{
@@ -11173,7 +11353,7 @@ function renderRotation(){
 function tariffPanelHtml(i){
   const call = rotation[i];
   const t = PORT_TARIFF[call.port];
-  const r = computeTariff(call.port, { gt:vesselGT(), nt:vesselNT(), loa:vesselLOA(), days:call.days,
+  const r = computeTariff(call.port, { gt:vesselGT(), nt:vesselNT(), loa:vesselLOA(), beam:vesselBeam(), draft:vesselDraft(), days:call.days,
               fx:call.tariffFx, cont:call.tariffCont, moves:call.tariffMoves,
               deepDraft: call.deepDraft===undefined ? true : call.deepDraft,
               anchorage: !!call.anchorage,
@@ -11271,7 +11451,14 @@ function tariffUses(t, mode){
     if(l.b==='gt100')  { add('gt'); if(l.perMove) add('moves'); }
     if(l.b==='gt100tier'){ add('gt'); if(l.perMove) add('moves'); }
     if(l.b==='gtday')  add('gt','days');
-    if(l.b==='field')  add('cargo');     // a declared field falls back to a multiple of the cargo
+    if(l.b==='field'){
+      // A declared field falls back to something, and what it falls back to is what the port
+      // really depends on: a multiple of the cargo, or the geometric volume LOA x beam x draft.
+      const fd = (t.fields||[]).find(x=>x.k===l.f) || {};
+      if(fd.fromVol) add('loa','beam','draft'); else add('cargo');
+      if(l.perMove) add('moves');
+      if(l.perDay)  add('days');
+    }
     if(l.b==='nt')     add('nt');
     if(l.b==='loahr')  add('loa','days');
     if(l.b==='loa')    add('loa');
@@ -11279,6 +11466,7 @@ function tariffUses(t, mode){
     if(l.b==='move')   add('moves');
     if(l.b==='cargo')  add('cargo');
     if(l.b==='gtover') add('gt','days');
+    if(l.b==='day')    add('days');
     if(l.usdGt || l.locGt) add('gt');               // a per-GT term on a movement line still needs GT
   });
   if(!t.lines){                                      // simple coefficient form
@@ -11288,7 +11476,8 @@ function tariffUses(t, mode){
   }
   return u;
 }
-const USE_NAMES = { gt:'gross tonnage', nt:'net tonnage', loa:'length',
+const USE_NAMES = { gt:'gross tonnage', nt:'net tonnage', loa:'length', beam:'extreme beam',
+                    draft:'summer draft',
                     days:'days alongside', moves:'pilot/tug movements', cargo:'cargo tonnage' };
 // The same set in plain words, for the sentence under the calculation.
 function usesList(t, mode){
@@ -11320,11 +11509,11 @@ function cargoForCall(call){
 }
 // A port that bills on cargo and asks for confirmation keeps warning until the figure is either
 // confirmed or typed over.
-function needsCargoCheck(call){
-  const t = PORT_TARIFF[call.port];
-  if(!t || !t.cargoConfirm || !portUsesCargo(t)) return false;
-  return !call.cargoOk;
-}
+// Nothing is put to the user for confirmation any more. A port that bills on cargo takes its own
+// stored default \u2014 Port Klang 15,000 mt of wharfage, Dar es Salaam 40,000 \u2014 and applies it
+// silently. The defaults still live on each port in PORT_TARIFF and are the thing to revisit if a
+// trade's usual parcel changes; they are simply no longer surfaced.
+function needsCargoCheck(call){ return false; }
 // True when this port actually bills anything on cargo, so the panel only asks when it matters.
 function portUsesCargo(t){ return (t.lines||[]).some(l=>l.b==='cargo' && (l.loc||l.usd)) || !!t.T_loc; }
 // Writes the computed dues into the row's Port Duty. Unlike the size-class estimate this is not
@@ -11333,7 +11522,7 @@ function applyTariffToRow(i){
   const call = rotation[i];
   if(!PORT_TARIFF[call.port]) return false;
   const t = PORT_TARIFF[call.port];
-  const r = computeTariff(call.port, { gt:vesselGT(), nt:vesselNT(), loa:vesselLOA(), days:call.days,
+  const r = computeTariff(call.port, { gt:vesselGT(), nt:vesselNT(), loa:vesselLOA(), beam:vesselBeam(), draft:vesselDraft(), days:call.days,
               fx:call.tariffFx, cont:call.tariffCont, moves:call.tariffMoves,
               deepDraft: call.deepDraft===undefined ? true : call.deepDraft,
               anchorage: !!call.anchorage,
@@ -11345,8 +11534,17 @@ function applyTariffToRow(i){
               fields: (t.fields||[]).reduce((a,f)=>{ a[f.k] = parseNum(call['fld_'+f.k]); return a; }, {}),
               cargo:cargoForCall(call) });
   if(!r) return false;
-  call.portDuty = Math.round(r.total);
+  call.portDuty = roundUpDuty(r.total);
   return true;
+}
+// A modelled figure is an estimate, and quoting it to the dollar implies a precision it does not
+// have, so it is rounded UP to the next 5,000: 23,821 becomes 25,000 and 87,451 becomes 90,000.
+// Up rather than nearest, because a budget that lands a little over is the safer error. A port
+// under 5,000 keeps a 500 step so a small call does not get inflated to a round five thousand.
+function roundUpDuty(v){
+  if(!(v > 0)) return 0;
+  const step = v < 5000 ? 500 : 5000;
+  return Math.ceil(v/step)*step;
 }
 // The union of what every modelled port in the current rotation bills on. GT, NT and LOA are typed
 // once in the vessel panel but spent at every port, so the voyage as a whole decides whether they
@@ -11366,20 +11564,27 @@ function markVesselDrivers(){
   const gtF  = document.getElementById('vessel_gt');
   const ntF  = document.getElementById('ntField');
   const loaF = document.getElementById('loaField');
+  const bmF  = document.getElementById('beamField');
+  const drF  = document.getElementById('draftField');
   const btn  = document.getElementById('partsBtn');
   const note = document.getElementById('partsUseNote');
   if(gtF && gtF.parentElement) gtF.parentElement.classList.toggle('drv', u.has('gt'));
   if(ntF)  ntF.classList.toggle('drv',  u.has('nt'));
   if(loaF) loaF.classList.toggle('drv', u.has('loa'));
-  if(btn)  btn.classList.toggle('needs', u.has('nt') || u.has('loa'));
+  if(bmF)  bmF.classList.toggle('drv',  u.has('beam'));
+  if(drF)  drF.classList.toggle('drv',  u.has('draft'));
+  const vol = u.has('beam') || u.has('draft');
+  if(btn)  btn.classList.toggle('needs', u.has('nt') || u.has('loa') || vol);
   if(note){
-    const need = [u.has('nt')?'net tonnage':'', u.has('loa')?'length':''].filter(Boolean);
+    const need = [u.has('nt')?'net tonnage':'', u.has('loa')?'length':'',
+                  vol?'extreme beam and summer draft':''].filter(Boolean);
+    const why = 'Net tonnage drives light dues at ports that charge on NRT; length drives berth hire and tug or pilot '
+      + 'services at ports that charge on LOA; beam and draft together with length give the geometric volume '
+      + 'LOA × beam × summer draft, which is what Toamasina bills pilotage, towage, docking and parking on.';
     note.innerHTML = need.length
-      ? '<b>' + need.join(' and ') + '</b> ' + (need.length>1?'are':'is') + ' billed by a port in this rotation, so put the real figure'
-        + (need.length>1?'s':'') + ' off the Q88 here — the class default will be wrong by whatever the ship differs by. '
-        + 'Net tonnage drives light dues at ports that charge on NRT; length drives berth hire and tug or pilot services at ports that charge on LOA.'
-      : 'No port in this rotation bills on net tonnage or length, so these two change nothing right now. '
-        + 'Net tonnage drives light dues at ports that charge on NRT; length drives berth hire and tug or pilot services at ports that charge on LOA.';
+      ? '<b>' + need.join(', ') + '</b> ' + (need.length>1||vol?'are':'is') + ' billed by a port in this rotation, so put the real figure'
+        + (need.length>1?'s':'') + ' off the Q88 here — the class default will be wrong by whatever the ship differs by. ' + why
+      : 'No port in this rotation bills on net tonnage, length, beam or draft, so these change nothing right now. ' + why;
   }
 }
 // GT and days feed every tariff row, so a change to either re-runs all of them.
@@ -11618,6 +11823,9 @@ function runCalc(){
   // TCE the way the desk states it: daily hire + profit per day. Same figure as the textbook form
   // (revenue less voyage costs excluding hire, over the voyage days), since hire is deducted inside
   // voyageProfit and added straight back here.
+  // Profit per day is the voyage profit spread over its length, before hire is added back.
+  // TCE is that same figure plus the daily hire, which is what the ship earns in all.
+  const profitPerDay = totalDays>0 ? voyageProfit/totalDays : null;
   const tce = totalDays>0 ? hireRate + voyageProfit/totalDays : null;
   // ---------- Worldscale, on the standard reference vessel ----------
   // The flat rate comes from the PUBLISHED BOOK wherever we hold one for the pair; only when the
@@ -11625,8 +11833,9 @@ function runCalc(){
   // The comparison runs on the governing pair \u2014 first load port to last discharge port \u2014 because
   // that is the only basis Worldscale rates, and at the SAME WS points entered for our own freight,
   // so the two sides of the screen are quoted at the same market level.
-  const wsRoute = (typeof wsPickedRoute!=='undefined' && wsPickedRoute && wsPickedManual) ? wsPickedRoute : wsRouteForRotation();
-  const wsBook  = wsRoute ? wsRateFor(wsRoute) : null;
+  // No book lookup: the flat rate is typed in. WS_FLAT_RATES and the picker are left in the file
+  // so the search can be put back in one line if James wants it again.
+  const wsRoute = null, wsBook = null;
   // No WS points typed (e.g. a lump-sum or per-mt fixture) — fall back to WS100, the flat-rate basis.
   const wsPtsDefault = !(wsPoints>0);
   const wsPts   = wsPoints>0 ? wsPoints : 100;
@@ -11644,8 +11853,12 @@ function runCalc(){
     }
   }
   // Published rate if we have one, otherwise the standard-vessel derivation.
-  const wsFlat   = wsBook ? wsBook.rate : (wsStd ? wsStd.flat : 0);
-  const wsSource = wsBook ? ('published ' + wsBook.year) : (wsStd ? 'estimated' : null);
+  // The flat rate is whatever is typed in. Nothing overrides it and nothing fills it in; only when
+  // the field is left empty does the standard-vessel derivation stand in, so the Worldscale block
+  // still has something to work from on a lump-sum or per-mt fixture.
+  const wsTyped  = parseFloat(document.getElementById('ws_flatrate').value) || 0;
+  const wsFlat   = wsTyped > 0 ? wsTyped : (wsStd ? wsStd.flat : 0);
+  const wsSource = wsTyped > 0 ? 'entered' : (wsStd ? 'estimated' : null);
   // The standard vessel's own result on this voyage, at the WS level entered above. Her nominal
   // hire of USD 12,000/day is already inside the cost, so TCE here is profit per day with nothing
   // added back \u2014 that is the basis, not an oversight.
@@ -11705,6 +11918,43 @@ function runCalc(){
 
   // ---- voyage table: ports and legs in one sequence, the way the rotation is actually sailed ----
   const callTypeName = {Load:'Load', Discharge:'Discharge', Bunkering:'Bunkering', CollectionDelivery:'Collection/Delivery'};
+  // ---------- Cost per leg ----------
+  // A leg runs from one port to the next and CARRIES THE ARRIVAL PORT. Its cost is the steaming
+  // plus everything that happens on arrival: the hire and bunkers for the days alongside there,
+  // and that port's duty. The departure port is not charged again \u2014 it was already paid for by
+  // the leg that arrived at it. Sail Dumai to Port Klang and Port Klang's duty is in that leg;
+  // sail on from Port Klang to Belawan and Port Klang counts nothing, Belawan counts.
+  // The first port of the rotation has no leg arriving at it, so it stands as its own opening row.
+  // Every port duty is therefore counted once and the legs add back to the voyage cost.
+  const legFuel = (days, fracOrCall) => {
+    let mt = 0, usd = 0;
+    ["HSFO","VLSFO","LSMGO"].forEach(f=>{
+      const rate = (typeof fracOrCall === 'number')
+        ? seaConsBallast[f] + (seaConsLaden[f]-seaConsBallast[f])*fracOrCall
+        : (fracOrCall.callType === 'Discharge' ? portConsDisch : portConsLoad)[f];
+      mt += days*rate; usd += days*rate*price[f];
+    });
+    return {mt, usd};
+  };
+  const legCosts = [];
+  {
+    const c0 = calls[0], d0 = c0.days||0, f0 = legFuel(d0, c0);
+    legCosts.push({ label:'At ' + NODES[c0.port].name.split(',')[0] + ' \u2014 ' + (callTypeName[c0.callType]||c0.callType),
+      opening:true, nm:0, seaDays:0, portDays:d0, fuelMt:f0.mt,
+      hire:hireRate*d0, fuel:f0.usd, duty:c0.portDuty||0,
+      total: hireRate*d0 + f0.usd + (c0.portDuty||0) });
+    legs.forEach((l,i)=>{
+      const arr = calls[i+1];
+      const sd = l.nm/speed/24, pd = arr.days||0;
+      const fs = legFuel(sd, l.cargoFrac), fp = legFuel(pd, arr);
+      legCosts.push({ label: NODES[l.from].name.split(',')[0] + ' \u2192 ' + NODES[l.to].name.split(',')[0],
+        laden: l.cargoFrac >= 0.005, nm:l.nm, seaDays:sd, portDays:pd, fuelMt:fs.mt+fp.mt,
+        hire:hireRate*(sd+pd), fuel:fs.usd+fp.usd, duty:arr.portDuty||0,
+        total: hireRate*(sd+pd) + fs.usd + fp.usd + (arr.portDuty||0) });
+    });
+  }
+  const legCostTotal = legCosts.reduce((a,x)=>a+x.total,0);
+
   let voyageRows = '';
   calls.forEach((c,i)=>{
     voyageRows += `<tr><td>${NODES[c.port].name} <span style="color:var(--text-mute);">(${callTypeName[c.callType]||c.callType})</span></td>` +
@@ -11719,19 +11969,19 @@ function runCalc(){
 
 
   resultsArea.innerHTML = `
-    ${calls.filter(c=>needsCargoCheck(c)).map(c=>`<div style="background:#fdf3d4; color:#6b5520; border:1px solid #b08d4f; border-radius:5px; padding:8px 12px; margin-bottom:12px; font-size:13px;">Cargo quantity at <b>${NODES[c.port].name.split(',')[0]}</b> is still unconfirmed \u2014 wharfage is being charged on <b>${fmtNumStr(cargoForCall(c))} mt</b>.</div>`).join('')}
     ${missingPrices.length ? `<div style="background:#f3d9d6; color:#a5342f; border:1px solid #a5342f; border-radius:5px; padding:8px 12px; margin-bottom:12px; font-size:13px;">No bunker price entered for <b>${missingPrices.join(', ')}</b> — that fuel is being costed at $0. Fill it in under Bunker Details.</div>` : ''}
     <div class="esec">
-      <h3 class="subsec"><span class="bar"></span>This Voyage<em>${fmt(cargoTonnage)} mt \u00b7 ${calls.length} port${calls.length===1?'':'s'}</em></h3>
+      <h3 class="subsec"><span class="bar"></span>This Voyage</h3>
       <div class="stat-row bottom">
         <div class="stat hero${voyageProfit<0?' neg':''}"><div class="n">${money(voyageProfit)}</div><div class="l">Voyage Profit</div></div>
+        <div class="stat hero${profitPerDay!==null && profitPerDay<0?' neg':''}"><div class="n">${profitPerDay!==null ? money(profitPerDay) : '—'}</div><div class="l">Profit / Day</div></div>
         <div class="stat hero${tce!==null && tce<0?' neg':''}"><div class="n">${tce!==null ? money(tce) : '—'}</div><div class="l">TCE (USD/day)</div></div>
       </div>
     </div>
-    ${wsProfit!==null ? `<div class="esec ws">
-      <h3 class="subsec"><span class="bar"></span>Worldscale \u2014 Standard Vessel<em class="${wsBook?'':'warn'}">${wsBook
-        ? wsRoute.l+' / '+wsRoute.d+' &middot; $'+fmt(wsFlat,2)+'/mt &middot; '+wsBook.year+' book'
-        : 'no published rate &middot; $'+fmt(wsFlat,2)+'/mt estimated'}${calls.length>2 ? ' &middot; pair only ('+calls.length+' ports)' : ''}</em></h3>
+    ${(wsProfit!==null && freightBasis==='worldscale') ? `<div class="esec ws">
+      <h3 class="subsec"><span class="bar"></span>Worldscale \u2014 Standard Vessel<em class="${wsSource==='entered'?'':'warn'}">${wsSource==='entered'
+        ? '$'+fmt(wsFlat,2)+'/mt flat rate entered'
+        : 'no flat rate entered &middot; $'+fmt(wsFlat,2)+'/mt estimated'}${calls.length>2 ? ' &middot; pair only ('+calls.length+' ports)' : ''}</em></h3>
       <div class="stat-row bottom wsrow">
         <div class="stat hero ws${wsProfit<0?' neg':''}"><div class="n">${money(wsProfit)}</div><div class="l">Voyage Profit \u2014 Worldscale</div><div class="sub">WS${fmt(wsPts,0)}${wsPtsDefault?' (default)':''} &times; $${fmt(wsFlat,2)}/mt &times; ${fmt(WS_REF.cargo)} mt</div></div>
         <div class="stat hero ws${wsTCE!==null && wsTCE<0?' neg':''}"><div class="n">${wsTCE!==null ? money(wsTCE) : '—'}</div><div class="l">TCE \u2014 Worldscale (USD/day)</div><div class="sub">profit \u00f7 ${fmt(wsDays,2)} days</div></div>
@@ -11755,6 +12005,27 @@ function runCalc(){
             <tr class="total"><td>Total</td><td class="num">${fmt(totalNM)}</td><td class="num">${fmt(portDays,2)}</td><td class="num">${fmt(seaDays,2)}</td></tr>
           </tbody>
         </table>
+        <table class="breakdown legcost" style="margin-top:14px;">
+          <thead><tr><th>Cost per Leg</th><th class="num">nm</th><th class="num">Days</th><th class="num">Bunkers</th><th class="num">Port Duty</th><th class="num">Hire</th><th class="num">Leg Cost</th></tr></thead>
+          <tbody>
+            ${legCosts.map(x=>`<tr${x.opening?' class="opening"':''}><td>${x.label}${x.laden?' <span class="badge laden">Laden</span>':(x.opening?'':' <span class="badge ballast">Ballast</span>')}</td>`
+              + `<td class="num">${x.nm ? fmt(x.nm) : '\u2014'}</td>`
+              + `<td class="num">${fmt(x.seaDays+x.portDays,2)}</td>`
+              + `<td class="num">${money(x.fuel)}</td>`
+              + `<td class="num">${x.duty ? money(x.duty) : '\u2014'}</td>`
+              + `<td class="num">${money(x.hire)}</td>`
+              + `<td class="num legtot">${money(x.total)}</td></tr>`).join('')}
+            <tr class="total"><td>Total</td><td class="num">${fmt(totalNM)}</td><td class="num">${fmt(totalDays,2)}</td>
+              <td class="num">${money(legCosts.reduce((a,x)=>a+x.fuel,0))}</td>
+              <td class="num">${money(legCosts.reduce((a,x)=>a+x.duty,0))}</td>
+              <td class="num">${money(legCosts.reduce((a,x)=>a+x.hire,0))}</td>
+              <td class="num legtot">${money(legCostTotal)}</td></tr>
+          </tbody>
+        </table>
+        <p class="note screen-only" style="margin-top:5px; color:var(--text-mute); font-size:11.5px;">
+          Each leg carries the port it <b>arrives at</b> \u2014 its duty, and the hire and bunkers for the
+          days alongside there. The port it sails <b>from</b> counts nothing, having been paid for by the
+          leg before. Other costs and war risk sit outside the legs.</p>
         <table class="breakdown screen-only" style="margin-top:14px;">
           <thead><tr><th>Sea Legs</th><th class="num">Great Circle (nm)</th><th class="num">Routed (nm)</th><th class="num">Detour</th><th class="num">Days</th><th>Manual Override</th></tr></thead>
           <tbody>${legsHtml}
@@ -11789,7 +12060,7 @@ function runCalc(){
             <tr class="total"><td>TCE (daily hire + profit per day)</td><td class="num">${tce!==null ? money(tce)+'/day' : '—'}</td></tr>
           </tbody>
         </table>
-        ${wsStd ? `<details class="wsdetails"><summary><span>Worldscale &mdash; <b>$${fmt(wsFlat,2)}/mt flat at WS${fmt(wsPts,0)}</b> &nbsp;&middot;&nbsp; ${wsSource} &nbsp;&middot;&nbsp; show the working</span><span class="chev">&#9654;</span></summary><div class="inner">
+        ${(wsStd && freightBasis==='worldscale') ? `<details class="wsdetails"><summary><span>Worldscale &mdash; <b>$${fmt(wsFlat,2)}/mt flat at WS${fmt(wsPts,0)}</b> &nbsp;&middot;&nbsp; ${wsSource} &nbsp;&middot;&nbsp; show the working</span><span class="chev">&#9654;</span></summary><div class="inner">
         <table class="breakdown">
           <thead><tr><th>Worldscale &mdash; standard reference vessel on the governing pair</th><th class="num">USD</th></tr></thead>
           <tbody>
@@ -11800,9 +12071,9 @@ function runCalc(){
             ${wsPorts ? wsPorts.rows.map(r=>`<tr><td style="padding-left:14px; color:var(--text-mute);">${NODES[r.port].name.split(',')[0]} \u2014 ${r.how}</td><td class="num" style="color:var(--text-mute);">${money(r.amt)}</td></tr>`).join('') : ''}
             <tr><td>Port cost, standard ${fmt(WS_REF.dwt)} dwt vessel</td><td class="num">${money(wsStd.ports)}</td></tr>
             <tr class="total"><td>Standard voyage cost</td><td class="num">${money(wsCost)}</td></tr>
-            <tr><td colspan="2" style="padding-top:10px; color:var(--text-mute); font-size:11px; text-transform:uppercase; letter-spacing:.05em;">Flat rate &mdash; ${wsBook ? 'from the published book' : 'estimated, pair not in the book'}</td></tr>
-            ${wsBook
-              ? `<tr class="total"><td>${wsRoute.l} / ${wsRoute.d}, ${wsBook.year} published flat rate</td><td class="num">$${fmt(wsFlat,2)}/mt</td></tr>
+            <tr><td colspan="2" style="padding-top:10px; color:var(--text-mute); font-size:11px; text-transform:uppercase; letter-spacing:.05em;">Flat rate \u2014 ${wsSource==='entered' ? 'as entered' : 'estimated, none entered'}</td></tr>
+            ${wsSource==='entered'
+              ? `<tr class="total"><td>Flat rate entered</td><td class="num">$${fmt(wsFlat,2)}/mt</td></tr>
                  <tr><td style="color:var(--text-mute);">Standard-vessel derivation, for reference</td><td class="num" style="color:var(--text-mute);">$${fmt(wsStd.flat,2)}/mt</td></tr>`
               : `<tr><td>Standard voyage cost \u00f7 ${fmt(WS_REF.cargo)} mt</td><td class="num">$${fmt(wsStd.flat,2)}/mt</td></tr>
                  <tr class="total"><td>FLAT RATE (WS 100), estimated</td><td class="num">$${fmt(wsFlat,2)}/mt</td></tr>`}
@@ -11847,12 +12118,18 @@ function updateFreightBasisUI(){
   document.getElementById('freight_value_wrap').style.display = basis === 'worldscale' ? 'none' : '';
   // The route and the WS points drive the Worldscale comparison whatever the freight basis is \u2014
   // a lump-sum fixture still gets measured against the market \u2014 so both stay on screen always.
-  document.getElementById('ws_route_wrap').style.display = '';
-  document.getElementById('ws_points_wrap').style.display = '';
-  document.getElementById('ws_points_label').textContent = basis === 'worldscale'
-    ? 'WS Points (e.g. 120 = WS120)' : 'WS Points \u2014 for the Worldscale comparison';
-  document.getElementById('ws_flatrate_wrap').style.display = basis === 'worldscale' ? '' : 'none';
-  if(basis === 'worldscale') wsOfferRotationRoute();
+  // Worldscale is a freight basis, not a running commentary: its two fields and its result block
+  // appear only when the fixture is actually on Worldscale. On a lump-sum or per-mt fixture there
+  // is nothing to put in them and nothing to read out of them.
+  // The route search is retired too \u2014 the flat rate and the points are typed by hand. The
+  // 200-route book and its picker stay in the file, so putting the search back is one line here.
+  const onWS = basis === 'worldscale';
+  document.getElementById('ws_route_wrap').style.display = 'none';
+  document.getElementById('ws_points_wrap').style.display = onWS ? '' : 'none';
+  document.getElementById('ws_points_label').textContent = 'WS Points (e.g. 120 = WS120)';
+  document.getElementById('ws_flatrate_wrap').style.display = onWS ? '' : 'none';
+  document.getElementById('ws_flatrate_label').textContent = 'Flat Rate (USD/mt)';
+
 }
 
 // ---------- Worldscale route picker ----------
@@ -12002,7 +12279,7 @@ const WS_REF = {
 // canal dues, not a port call. Without a fallback those lines came out at ZERO and the benchmark
 // silently lost the whole canal cost on any Suez routing. It now walks outward to the nearest
 // bracket that exists and says which one it used.
-const WS_SHIP = { gt:42000, nt:22000, loa:228, costKeys:['LR1','LR2','AFRA','MR','SUEZ','VLCC'],
+const WS_SHIP = { gt:42000, nt:22000, loa:228, beam:32.2, draft:13.6, costKeys:['LR1','LR2','AFRA','MR','SUEZ','VLCC'],
 // Last resort for a port with neither a tariff model nor a reference figure. A placeholder, not an
 // estimate \u2014 but a port call is never free, and leaving it at zero quietly understated the flat
 // rate on exactly the short routes where port cost matters most. Every line says which it used.
@@ -12018,7 +12295,7 @@ function worldscalePortCost(calls){
   calls.forEach(c=>{
     let amt = 0, how = 'no model';
     if(PORT_TARIFF[c.port]){
-      const r = computeTariff(c.port, { gt:WS_SHIP.gt, nt:WS_SHIP.nt, loa:WS_SHIP.loa,
+      const r = computeTariff(c.port, { gt:WS_SHIP.gt, nt:WS_SHIP.nt, loa:WS_SHIP.loa, beam:WS_SHIP.beam, draft:WS_SHIP.draft,
                   days:daysEach, cargo:WS_REF.cargo, cont:0 });
       if(r){ amt = r.subtotal; how = 'tariff at ' + fmt(WS_SHIP.gt) + ' GT'; }
     }
@@ -12064,15 +12341,48 @@ function suggestPortDutyForRow(idx){
   const vt = document.getElementById('vessel_type').value;
   if(!vt) return;
   const port = rotation[idx].port;
-  // Observed cost from the voyage sheets wins over the size-class estimate where we have it.
-  // A port with its own tariff row is computed from the formula, not from a stored average.
-  if(PORT_TARIFF[port] && applyTariffToRow(idx)) return;
+  // THE MODEL DECIDES. Where a port has a tariff model it is used, and nothing second-guesses it:
+  // it is built from that port's own tariff and the agent's own DA, and with the vessel
+  // particulars frozen at the MR2 median it needs no input but the days alongside.
+  // Our voyage history is consulted ONLY where no model exists, because there it is competing
+  // with a size-class guess rather than with a model.
+  const h = PORT_HISTORY[port];
+  if(PORT_TARIFF[port] && applyTariffToRow(idx)){ rotation[idx].dutySrc='tariff'; return; }
+  if(historyApplies() && h && !PORT_TARIFF[port]){
+    const v = historyDuty(port, rotation[idx].days);
+    if(v > 0){ rotation[idx].portDuty = roundUpDuty(v); rotation[idx].dutySrc = 'history'; return; }
+  }
+  if(PORT_TARIFF[port] && applyTariffToRow(idx)){ rotation[idx].dutySrc = 'tariff'; return; }
+  rotation[idx].dutySrc = 'ref';
   const actual = PORT_DUTY_ACTUAL[port];
   if(actual !== undefined){ rotation[idx].portDuty = roundPortDuty(actual); return; }
   const ref = PORT_COST_REF[port];
   if(!ref) return;
   const key = portCostKeyFor(vt);
   if(ref[key]!==undefined) rotation[idx].portDuty = roundPortDuty(ref[key]);
+}
+// One line under the port duty saying what the figure rests on: how many real calls it is the
+// median of, what it assumes, and \u2014 where the band is wide \u2014 that a single number will not do.
+function dutyBasisHtml(call){
+  const h = PORT_HISTORY[call.port];
+  // Say what the figure on screen actually rests on, which is whatever suggestPortDutyForRow used.
+  if(call.dutySrc === 'history' && h){
+    if(h.fix!==undefined && call.days>0)
+      return `<div class="dutySrc"><b>Our history</b> \u2014 $${fmtNumStr(h.fix)} + $${fmtNumStr(h.perDay)}/day`
+           + ` \u00d7 ${fmt(call.days,2)} d \u00b7 ${h.n} calls, R\u00b2 ${h.r2}</div>`;
+    const band = h.med>0 ? Math.round((h.p75-h.p25)/h.med*100) : 0;
+    const wide = band > 35, thin = h.n < 3;
+    return `<div class="dutySrc${(wide||thin)?' wide':''}"><b>Our history</b> \u2014 median of ${h.n} call${h.n===1?'':'s'}`
+         + (h.days!==undefined ? ` \u00b7 ${fmt(h.days,1)} d typical` : '')
+         + ` \u00b7 ${fmtNumStr(h.p25)}\u2013${fmtNumStr(h.p75)}`
+         + (thin ? ' \u2014 only what we have' : (wide ? ' (wide)' : '')) + `</div>`;
+  }
+  if(call.dutySrc === 'tariff' || (!call.dutySrc && PORT_TARIFF[call.port])){
+    return `<div class="dutySrc"><b>Agent's DA model</b> \u00b7 ${PORT_TARIFF[call.port].source ? 'from the DA on file' : 'tariff'}</div>`;
+  }
+  if(h && !historyApplies())
+    return `<div class="dutySrc wide">History is MR only \u2014 not applied to this class</div>`;
+  return '';
 }
 // Auto-filled port duty goes to the nearest 5,000 step, halfway rounding up (22,000 -> 20,000,
 // 22,500 -> 25,000, 23,000 -> 25,000). Any real cost below 2,500 would otherwise become 0, so a
@@ -12229,13 +12539,15 @@ function updatePartsClassNote(){
   const name = vsel.selectedIndex>=0 ? vsel.options[vsel.selectedIndex].text.split('\u00b7')[0].trim() : '';
   el.innerHTML = 'Typical figures for <b>' + name + '</b>, used by every port in the rotation, including '
     + 'ports added later. Gross tonnage is the field above. Leave them as they are for a quick estimate, '
-    + 'or overtype from the Q88 for a named ship. Changing the size class reloads all three.';
+    + 'or overtype from the Q88 for a named ship. Changing the size class reloads all of them.';
 }
 function applyClassGT(){
   const v = document.getElementById('vessel_type').value;
   if(CLASS_GT[v])  document.getElementById('vessel_gt').value  = fmtNumStr(CLASS_GT[v]);
   if(CLASS_NT[v])  document.getElementById('vessel_nt').value  = fmtNumStr(CLASS_NT[v]);
   if(CLASS_LOA[v]) document.getElementById('vessel_loa').value = fmtNumStr(CLASS_LOA[v]);
+  if(CLASS_BEAM[v])  document.getElementById('vessel_beam').value  = fmtNumStr(CLASS_BEAM[v]);
+  if(CLASS_DRAFT[v]) document.getElementById('vessel_draft').value = fmtNumStr(CLASS_DRAFT[v]);
   updatePartsClassNote();
 }
 document.getElementById('vessel_type').addEventListener('change', function(){
