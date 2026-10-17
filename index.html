@@ -470,7 +470,6 @@
         <select id="vessel_type">
           <option value="MR2" selected>MR2 &middot; 40,000&ndash;55,000 DWT</option>
           <option value="MR1">MR1 &middot; 25,000&ndash;40,000 DWT</option>
-          <option value="NB_MR2">5Y TC NB MR2 &middot; newbuilding on 5-year time charter</option>
           <option value="J19">J19 &middot; 20,000 DWT</option>
         </select>
       </div>
@@ -10690,15 +10689,15 @@ function vesselDraft(){ return parseNum(document.getElementById('vessel_draft').
 // 13,798; LOA median 182.9, with 183.0 the single most common figure). Anchors: Blossom Glory
 // GT 30,042 = 47,240 DWT, Pacific Spirit GT 30,101. Picking MR2 therefore loads a real median
 // ship and nobody has to type a particular \u2014 which is the point.
-const CLASS_GT = { J19:13700, HANDY:13500, MR1:23000, MR2:30000, NB_MR2:30100, LR1:42000, LR2:62000,
+const CLASS_GT = { J19:11954, HANDY:13500, MR1:23000, MR2:30000, LR1:42000, LR2:62000,
                    AFRAMAX:62000, SUEZMAX:82000, VLCC:162000 };
-const CLASS_NT = { J19:6400, HANDY:6300, MR1:11000, MR2:13800, NB_MR2:13800, LR1:22000, LR2:36000,
+const CLASS_NT = { J19:5756, HANDY:6300, MR1:11000, MR2:13800, LR1:22000, LR2:36000,
                    AFRAMAX:36000, SUEZMAX:53000, VLCC:110000 };
-const CLASS_LOA = { J19:155, HANDY:150, MR1:176, MR2:183, NB_MR2:183, LR1:228, LR2:250,
+const CLASS_LOA = { J19:147.83, HANDY:150, MR1:176, MR2:183, LR1:228, LR2:250,
                     AFRAMAX:250, SUEZMAX:274, VLCC:333 };
-const CLASS_BEAM  = { J19:26, HANDY:24, MR1:31, MR2:32.2, NB_MR2:32.2, LR1:32.2, LR2:44,
+const CLASS_BEAM  = { J19:24.2, HANDY:24, MR1:31, MR2:32.2, LR1:32.2, LR2:44,
                       AFRAMAX:44, SUEZMAX:48, VLCC:60 };
-const CLASS_DRAFT = { J19:9.5, HANDY:9.0, MR1:11.0, MR2:13.0, NB_MR2:13.0, LR1:12.6, LR2:14.9,
+const CLASS_DRAFT = { J19:9.437, HANDY:9.0, MR1:11.0, MR2:13.0, LR1:12.6, LR2:14.9,
                       AFRAMAX:14.9, SUEZMAX:16.1, VLCC:22.5 };
 
 // ---------- What these ports ACTUALLY cost, from GHS's own voyage records ----------
@@ -10827,7 +10826,7 @@ const PORT_DUTY_ACTUAL = {
   lagos: 1120
 };
 const PORT_COST_REF = {"new_york":{"MR":45000,"LR1":55000,"LR2":75000},"rotterdam":{"MR":55000,"LR1":85000,"LR2":90000,"SUEZ":150000},"brisbane":{"MR":45000,"LR1":60000,"LR2":90000},"buenos_aires":{"MR":110000,"LR1":135000,"LR2":170000},"callao":{"MR":60000},"cape_town":{"MR":25000,"LR1":30000,"LR2":45000},"chittagong":{"MR":35000,"LR1":50000,"LR2":65000},"chennai":{"MR":55000,"LR1":85000,"LR2":135000},"colombo":{"MR":15000,"LR1":20000,"LR2":25000},"dar_es_salaam":{"MR":40000,"LR1":50000,"LR2":120000,"AFRA":120000},"djibouti":{"MR":15000,"LR1":20000},"dumai":{"MR":50000,"LR1":60000,"LR2":75000},"durban":{"MR":25000,"LR1":35000,"LR2":45000},"ennore":{"MR":55000,"LR1":75000,"LR2":110000},"fujairah":{"MR":12500,"LR1":17500,"LR2":25000},"haldia":{"LR1":20000},"ho_chi_minh":{"MR":30000},"hong_kong":{"MR":35000,"LR1":35000},"houston":{"MR":40000,"LR1":65000,"LR2":90000},"jakarta":{"MR":30000,"LR1":35000,"LR2":40000},"jebel_ali":{"MR":25000,"LR1":30000,"LR2":45000},"jubail":{"MR":25000,"LR1":30000,"LR2":35000},"kandla":{"MR":65000,"LR1":90000,"LR2":125000},"lagos":{"MR":30000,"LR1":35000,"LR2":45000},"los_angeles":{"MR":100000,"LR1":125000,"LR2":150000},"luanda":{"LR2":50000},"medan":{"MR":30000},"melbourne":{"MR":55000,"LR1":80000,"LR2":95000},"mombasa":{"MR":30000,"LR1":35000,"LR2":55000},"new_mangalore":{"MR":40000,"LR1":50000,"LR2":70000},"ningbo":{"LR2":75000},"paradip":{"MR":90000,"LR1":100000,"LR2":115000},"pasir_gudang":{"MR":20000,"LR1":30000,"LR2":30000},"port_klang":{"MR":20000,"LR1":30000,"LR2":30000},"port_sudan":{"MR":40000},"qingdao":{"MR":25000,"LR1":35000,"LR2":75000},"ras_tanura":{"MR":20000,"LR1":25000,"LR2":30000},"rio_de_janeiro":{"MR":50000},"santos":{"MR":50000},"shanghai":{"MR":25000,"LR1":40000,"LR2":55000},"singapore":{"MR":22500,"LR1":25000,"LR2":30000},"suape":{"MR":60000,"LR1":75000,"LR2":110000},"suez":{"MR":50000},"visakhapatnam":{"MR":70000,"LR1":100000,"LR2":140000},"walvis_bay":{"MR":50000,"LR1":55000,"LR2":60000},"yanbu":{"MR":10000,"LR1":10000,"LR2":10000},"fremantle":{"MR":32500},"surabaya":{"MR":45000},"kaohsiung":{"MR":22500,"LR1":35000,"LR2":50000},"vancouver":{"LR2":180000},"tokyo":{"LR1":80000},"balikpapan":{"MR":50000,"LR1":55000,"LR2":60000},"bintulu":{"MR":30000,"LR1":35000,"LR2":50000},"sydney":{"MR":65000,"LR1":75000,"LR2":150000},"chiba":{"LR1":80000},"duqm":{"LR1":40000,"LR2":55000},"map_ta_phut":{"MR":30000,"LR1":35000,"LR2":40000,"AFRA":40000},"mina_al_ahmadi":{"MR":35000,"LR1":40000,"LR2":45000},"pulau_laut":{"MR":30000},"ruwais":{"MR":25000,"LR1":35000,"LR2":50000,"AFRA":50000,"SUEZ":50000},"sikka":{"MR":40000,"LR1":45000,"LR2":60000,"SUEZ":125000},"sohar":{"MR":20000,"LR1":25000,"LR2":35000},"ulsan":{"MR":35000,"LR1":40000,"LR2":45000},"yeosu":{"MR":30000,"LR1":40000,"LR2":60000,"AFRA":60000},"zhoushan":{"MR":30000,"LR1":40000,"LR2":75000,"AFRA":75000},"pengerang":{"LR1":25000},"amsterdam":{"MR":55000},"toamasina":{"MR":50000,"LR1":115000,"LR2":125000}};
-const CONSUMPTION_REF = {"J19":{"ballast":12.5,"laden":14,"idle":2.5,"load":3,"disch":7,"heating":0},"HANDY":{"ballast":15,"laden":17,"idle":3,"load":3,"disch":8,"heating":0},"MR1":{"ballast":20,"laden":22,"idle":4,"load":4,"disch":12,"heating":0},"AFRA":{"ballast":24.5,"laden":35,"idle":6,"load":10,"disch":42.5,"heating":0},"LR1":{"ballast":17,"laden":25,"idle":5,"load":6,"disch":30,"heating":0},"LR2":{"ballast":24.5,"laden":35,"idle":6,"load":10,"disch":42.5,"heating":0},"MR ECO":{"ballast":16,"laden":20,"idle":6,"load":8,"disch":19,"heating":0},"MR NORMAL":{"ballast":24,"laden":26,"idle":5,"load":5,"disch":15,"heating":0},"MR OLD":{"ballast":25,"laden":28,"idle":5,"load":5,"disch":25,"heating":0},"SUEZ":{"ballast":44,"laden":53,"idle":10,"load":12,"disch":68,"heating":0},"VLCC":{"ballast":53,"laden":70,"idle":10,"load":20,"disch":110,"heating":0},"SUEZ S ECO":{"ballast":24.5,"laden":30,"idle":5,"load":6,"disch":7,"heating":0},"SUEZ 2025":{"ballast":28.7,"laden":41.9,"idle":8,"load":20,"disch":80,"heating":0}};
+const CONSUMPTION_REF = {"J19":{"ballast":14.8,"laden":15,"idle":4.3,"load":5.1,"disch":6.7,"heating":13.1},"HANDY":{"ballast":15,"laden":17,"idle":3,"load":3,"disch":8,"heating":0},"MR1":{"ballast":20,"laden":22,"idle":4,"load":4,"disch":12,"heating":0},"AFRA":{"ballast":24.5,"laden":35,"idle":6,"load":10,"disch":42.5,"heating":0},"LR1":{"ballast":17,"laden":25,"idle":5,"load":6,"disch":30,"heating":0},"LR2":{"ballast":24.5,"laden":35,"idle":6,"load":10,"disch":42.5,"heating":0},"MR ECO":{"ballast":16,"laden":20,"idle":6,"load":8,"disch":19,"heating":0},"MR NORMAL":{"ballast":24,"laden":26,"idle":5,"load":5,"disch":15,"heating":0},"MR OLD":{"ballast":25,"laden":28,"idle":5,"load":5,"disch":25,"heating":0},"SUEZ":{"ballast":44,"laden":53,"idle":10,"load":12,"disch":68,"heating":0},"VLCC":{"ballast":53,"laden":70,"idle":10,"load":20,"disch":110,"heating":0},"SUEZ S ECO":{"ballast":24.5,"laden":30,"idle":5,"load":6,"disch":7,"heating":0},"SUEZ 2025":{"ballast":28.7,"laden":41.9,"idle":8,"load":20,"disch":80,"heating":0}};
 
 // Two categories, per Mr. Badar: "GHS Vessels" covers the whole fleet minus Pacific Adventure,
 // all confirmed by Captain Roy to share the same real speed-indexed consumption curve and to run
@@ -10900,11 +10899,6 @@ const SPOT_VESSEL_CURVES = {
 // figure, it beats any estimate here, and it is the number a performance claim turns on.
 // Do NOT also tick "Eco vessel" with this class selected \u2014 the saving is already in these
 // numbers and the tick would take a further 25% off on top of it.
-const NB_MR2_CURVE = {
-  ballast: [[12,13.1],[12.5,15.3],[13,17.1],[13.5,18.6],[14,19.9],[14.5,21.9]],
-  laden:   [[11,14.6],[11.5,16.1],[12,16.9],[12.5,18.0],[13,18.6],[13.5,21.2],[14,23.4]],
-  portLoading: 5.5, portDischargingFO: 10, portDischargingDO: 3.5, idleAux: 2.5, idleBoiler: 2
-};
 
 // class figures rather than a specific vessel's real numbers, since overestimating cost is safer
 // than underestimating it when the real figure isn't known. "Other" (blank) does no auto-fill at
@@ -10918,12 +10912,20 @@ const VESSEL_REF = {
   "HANDY":   { isClass:true, sizeClass:"HANDY", consumClass:"HANDY" },
   "MR1":     { isClass:true, sizeClass:"MR",    consumClass:"MR1" },
   "MR2":     { isClass:true, sizeClass:"MR",    consumClass:"MR NORMAL" },
-  // The 5-year time-chartered newbuildings run off their own speed curve, like the fleet vessels.
-  "NB_MR2":  { isClass:true, sizeClass:"MR",    hasRealCurve:true, curve:NB_MR2_CURVE },
-  // J19 is 20,000 DWT, below every bracket in PORT_COST_REF, so no reference port duty is offered
-  // for her at a port with no tariff model \u2014 better a blank to type over than an MR figure that
-  // would be far too high for a ship this size. Her consumption is an estimate for a 20,000 DWT
-  // product tanker, not a measured curve; overtype it from her own S&C sheet when you have one.
+  // J19 is MT ROAMA 18 (IMO 9263095), and both her Q88 of 8 Sep 2026 and her SNC are now on file,
+  // so nothing about her is estimated any more:
+  //   Q88  LOA 147.83 m, beam 24.20 m, summer draft 9.437 m, GT 11,954, NT 5,756, SDWT 19,997 mt.
+  //        The old class figures were a size guess and ran well over \u2014 GT 13,700 against a real
+  //        11,954, which is 15% of every GT-based due at every port.
+  //   SNC  main engine plus auxiliaries, which is what the ship actually burns:
+  //        laden 12.5 + 2.5 = 15.0 mt/day at 11.5 kn, ballast 12.3 + 2.5 = 14.8,
+  //        loading 1.8 boiler + 3.3 A/E = 5.1, discharging 1.8 + 4.9 = 6.7, idle 1.8 + 2.5 = 4.3.
+  //        Cargo heating is a further 10 + 3.1 = 13.1 mt/day on top, carried but not applied
+  //        automatically \u2014 it only bites on a heated parcel.
+  // FUEL GRADE: the SNC says "HFO 380 CST" throughout, but that is the VISCOSITY grade. Q88 10.2
+  // says main propulsion and generators both run on VLSFO at 0.5% sulphur, and 10.13 says there is
+  // no scrubber, so she must burn VLSFO. Leave Scrubber fitted unticked for her.
+  // Her warranted speed is 11.5 kn, slower than the MR2 default \u2014 worth setting on the voyage.
   "J19":     { isClass:true, sizeClass:"HANDY", consumClass:"J19" },
   "LR1":     { isClass:true, sizeClass:"LR1",   consumClass:"LR1" },
   "LR2":     { isClass:true, sizeClass:"LR2",   consumClass:"LR2" },
@@ -11971,7 +11973,6 @@ function runCalc(){
   resultsArea.innerHTML = `
     ${missingPrices.length ? `<div style="background:#f3d9d6; color:#a5342f; border:1px solid #a5342f; border-radius:5px; padding:8px 12px; margin-bottom:12px; font-size:13px;">No bunker price entered for <b>${missingPrices.join(', ')}</b> — that fuel is being costed at $0. Fill it in under Bunker Details.</div>` : ''}
     <div class="esec">
-      <h3 class="subsec"><span class="bar"></span>This Voyage</h3>
       <div class="stat-row bottom">
         <div class="stat hero${voyageProfit<0?' neg':''}"><div class="n">${money(voyageProfit)}</div><div class="l">Voyage Profit</div></div>
         <div class="stat hero${profitPerDay!==null && profitPerDay<0?' neg':''}"><div class="n">${profitPerDay!==null ? money(profitPerDay) : '—'}</div><div class="l">Profit / Day</div></div>
@@ -12592,7 +12593,9 @@ applyFreightSuggestion();
       if(el.type==='checkbox') el.checked = !!v; else el.value = v;
     });
     const vtSel = document.getElementById('vessel_type');
-    if(!vtSel.value){ vtSel.value = 'MR2'; applyVesselConsumption(); }
+    // A session saved while the retired 5Y TC NB MR2 class was selected leaves this empty, since
+    // the option is gone. It was the same ship as MR2, so that is where it lands.
+    if(!vtSel.value){ vtSel.value = 'MR2'; applyClassGT(); applyVesselConsumption(); }
     if(Array.isArray(st.rotation) && st.rotation.length) rotation = st.rotation;
     if(st.manualOverrides) manualOverrides = st.manualOverrides;
     const cd = document.getElementById('consDetails');
