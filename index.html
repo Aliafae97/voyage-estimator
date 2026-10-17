@@ -283,6 +283,17 @@
   .stat.hero .n{ color:var(--route); font-size:27px; }
   .stat.hero .l{ color:#9fb2bd; }
 
+  /* Profit or loss is the first thing read off this row, so the whole tile carries it:
+     deep green in profit, deep red in loss. Break-even and blank tiles keep the navy. */
+  .stat.hero.pos{ background:#0d2b1f; border-color:#0d2b1f; border-left-color:#4cbf8a; }
+  .stat.hero.pos .n{ color:#5cd79b; }
+  .stat.hero.pos .l{ color:#9bc7b2; }
+  .stat.hero.pos .sub{ color:#9bc7b2; }
+  .stat.hero.neg{ background:#2d1316; border-color:#2d1316; border-left-color:#e0645c; }
+  .stat.hero.neg .n{ color:#f3897f; }
+  .stat.hero.neg .l{ color:#d3a9a5; }
+  .stat.hero.neg .sub{ color:#d3a9a5; }
+
   .cols{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
   @media (max-width:900px){ .cols{ grid-template-columns:1fr; } }
 
@@ -11970,22 +11981,25 @@ function runCalc(){
   });
 
 
+  // Positive -> green tile, negative -> red tile, zero/blank -> neutral.
+  const pnl = v => (v===null || v===undefined || !isFinite(v) || v===0) ? '' : (v>0 ? ' pos' : ' neg');
+
   resultsArea.innerHTML = `
     ${missingPrices.length ? `<div style="background:#f3d9d6; color:#a5342f; border:1px solid #a5342f; border-radius:5px; padding:8px 12px; margin-bottom:12px; font-size:13px;">No bunker price entered for <b>${missingPrices.join(', ')}</b> — that fuel is being costed at $0. Fill it in under Bunker Details.</div>` : ''}
     <div class="esec">
       <div class="stat-row bottom">
-        <div class="stat hero${voyageProfit<0?' neg':''}"><div class="n">${money(voyageProfit)}</div><div class="l">Voyage Profit</div></div>
-        <div class="stat hero${profitPerDay!==null && profitPerDay<0?' neg':''}"><div class="n">${profitPerDay!==null ? money(profitPerDay) : '—'}</div><div class="l">Profit / Day</div></div>
-        <div class="stat hero${tce!==null && tce<0?' neg':''}"><div class="n">${tce!==null ? money(tce) : '—'}</div><div class="l">TCE (USD/day)</div></div>
+        <div class="stat hero${pnl(voyageProfit)}"><div class="n">${money(voyageProfit)}</div><div class="l">Voyage Profit</div></div>
+        <div class="stat hero${pnl(profitPerDay)}"><div class="n">${profitPerDay!==null ? money(profitPerDay) : '—'}</div><div class="l">Profit / Day</div></div>
+        <div class="stat hero${pnl(tce)}"><div class="n">${tce!==null ? money(tce) : '—'}</div><div class="l">TCE (USD/day)</div></div>
       </div>
     </div>
-    ${(wsProfit!==null && freightBasis==='worldscale') ? `<div class="esec ws">
+    ${(SHOW_WS_BENCHMARK && wsProfit!==null && freightBasis==='worldscale') ? `<div class="esec ws">
       <h3 class="subsec"><span class="bar"></span>Worldscale \u2014 Standard Vessel<em class="${wsSource==='entered'?'':'warn'}">${wsSource==='entered'
         ? '$'+fmt(wsFlat,2)+'/mt flat rate entered'
         : 'no flat rate entered &middot; $'+fmt(wsFlat,2)+'/mt estimated'}${calls.length>2 ? ' &middot; pair only ('+calls.length+' ports)' : ''}</em></h3>
       <div class="stat-row bottom wsrow">
-        <div class="stat hero ws${wsProfit<0?' neg':''}"><div class="n">${money(wsProfit)}</div><div class="l">Voyage Profit \u2014 Worldscale</div><div class="sub">WS${fmt(wsPts,0)}${wsPtsDefault?' (default)':''} &times; $${fmt(wsFlat,2)}/mt &times; ${fmt(WS_REF.cargo)} mt</div></div>
-        <div class="stat hero ws${wsTCE!==null && wsTCE<0?' neg':''}"><div class="n">${wsTCE!==null ? money(wsTCE) : '—'}</div><div class="l">TCE \u2014 Worldscale (USD/day)</div><div class="sub">profit \u00f7 ${fmt(wsDays,2)} days</div></div>
+        <div class="stat hero ws${pnl(wsProfit)}"><div class="n">${money(wsProfit)}</div><div class="l">Voyage Profit \u2014 Worldscale</div><div class="sub">WS${fmt(wsPts,0)}${wsPtsDefault?' (default)':''} &times; $${fmt(wsFlat,2)}/mt &times; ${fmt(WS_REF.cargo)} mt</div></div>
+        <div class="stat hero ws${pnl(wsTCE)}"><div class="n">${wsTCE!==null ? money(wsTCE) : '—'}</div><div class="l">TCE \u2014 Worldscale (USD/day)</div><div class="sub">profit \u00f7 ${fmt(wsDays,2)} days</div></div>
       </div>
     </div>` : ''}
     <div class="esec">
@@ -12061,7 +12075,7 @@ function runCalc(){
             <tr class="total"><td>TCE (daily hire + profit per day)</td><td class="num">${tce!==null ? money(tce)+'/day' : '—'}</td></tr>
           </tbody>
         </table>
-        ${(wsStd && freightBasis==='worldscale') ? `<details class="wsdetails"><summary><span>Worldscale &mdash; <b>$${fmt(wsFlat,2)}/mt flat at WS${fmt(wsPts,0)}</b> &nbsp;&middot;&nbsp; ${wsSource} &nbsp;&middot;&nbsp; show the working</span><span class="chev">&#9654;</span></summary><div class="inner">
+        ${(SHOW_WS_BENCHMARK && wsStd && freightBasis==='worldscale') ? `<details class="wsdetails"><summary><span>Worldscale &mdash; <b>$${fmt(wsFlat,2)}/mt flat at WS${fmt(wsPts,0)}</b> &nbsp;&middot;&nbsp; ${wsSource} &nbsp;&middot;&nbsp; show the working</span><span class="chev">&#9654;</span></summary><div class="inner">
         <table class="breakdown">
           <thead><tr><th>Worldscale &mdash; standard reference vessel on the governing pair</th><th class="num">USD</th></tr></thead>
           <tbody>
@@ -12240,6 +12254,14 @@ function wsRouteForRotation(){
 // An MR is well under the 75,000 dwt standard, so it has to earn a PREMIUM over WS 100 to make
 // the same daily return \u2014 typically WS 150-220, which is why the comparison runs at whatever
 // WS points are entered for our own freight rather than at a figure fixed in code.
+// The Worldscale standard-vessel benchmark \u2014 the green block showing what the 75,000 dwt
+// reference ship would earn \u2014 is switched OFF at Mr. Bader's request. Everything that produces
+// it is still here and still correct: the reference vessel below, worldscalePortCost(), the
+// working panel, the published flat rate book and its picker. Setting this to true brings the
+// whole block back with no other change.
+// This does NOT affect pricing a Worldscale fixture: with the freight basis set to Worldscale,
+// the WS points and flat rate still drive OUR freight as they always did.
+const SHOW_WS_BENCHMARK = false;
 const WS_REF = {
   hire:        12000,   // USD/day nominal flat-rate hire
   dwt:         75000,   // standard deadweight
