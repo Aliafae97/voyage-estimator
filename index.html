@@ -479,7 +479,7 @@
       <div class="field" style="grid-column:span 2;">
         <label>Vessel size class (auto-fills consumption &amp; port duty &mdash; all editable)</label>
         <select id="vessel_type">
-          <option value="MR2" selected>MR2 &middot; 40,000&ndash;55,000 DWT</option>
+          <option value="MR2" selected>MR2 Eco &middot; 40,000&ndash;55,000 DWT</option>
           <option value="MR1">MR1 &middot; 25,000&ndash;40,000 DWT</option>
           <option value="J19">J19 &middot; 20,000 DWT</option>
         </select>
@@ -488,7 +488,6 @@
         <label id="fuelGradeNote">Main fuel: VLSFO</label>
         <div class="optstack">
           <label class="scrubber"><input type="checkbox" id="scrubber"> Scrubber fitted</label>
-          <label class="scrubber"><input type="checkbox" id="eco"> Eco vessel</label>
         </div>
       </div>
       <!-- The vessel particulars are set by the size class and never shown. They are still real
@@ -12446,9 +12445,20 @@ function applyFreightSuggestion(){
 }
 // Fuel grade the vessel burns: Scrubber fitted ticked = HSFO, unticked = VLSFO.
 function mainFuel(){ return document.getElementById('scrubber').checked ? 'HSFO' : 'VLSFO'; }
-function isEco(){ return document.getElementById('eco').checked; }
+// The "Eco vessel" tick box is removed. It took a flat 25% off sailing consumption for every
+// class, which was a placeholder and too deep: Mr. Amer checked the source consumption figures
+// and found no eco/non-eco split in them, so the MR2 numbers already describe modern tonnage and
+// a further cut would double-count. MR2 is therefore labelled "MR2 Eco" in the picker and its
+// consumption stands as it is. isEco() is kept and pinned to false so the few places that still
+// ask (the grade note, the report line) keep working without a tick box behind them.
+function isEco(){ return false; }
 function updateFuelGradeNote(){
-  document.getElementById('fuelGradeNote').textContent = 'Main fuel: ' + mainFuel() +
+  // With a scrubber the grade is not one grade: HSFO at sea, compliant fuel alongside, because
+  // open-loop discharge is banned in port. Saying so here stops the port rows looking like a bug.
+  const grade = (mainFuel() === 'HSFO')
+    ? 'Main fuel: HSFO at sea \u00b7 LSMGO in port (open-loop banned in port)'
+    : 'Main fuel: VLSFO';
+  document.getElementById('fuelGradeNote').textContent = grade +
     (isEco() ? ' \u00b7 Eco \u2212' + Math.round(ECO_SEA_SAVING*100) + '% at sea' : '');
 }
 // Named vessels carry their own grade from their S&C sheet — selecting one sets the tick box to
@@ -12531,10 +12541,21 @@ function applyBaseConsumption(){
     document.getElementById('cp_lsmgo_load').value = 0;
     document.getElementById('cp_lsmgo_disch').value = 0;
     if(mainFuel() === 'HSFO'){
+      // SEA: scrubber running in open water, so the main engine burns cheap high-sulphur HSFO.
       document.getElementById('cs_hsfo_ballast').value = cref.ballast||0;
       document.getElementById('cs_hsfo_laden').value = cref.laden||0;
-      document.getElementById('cp_hsfo_load').value = cref.load||0;
-      document.getElementById('cp_hsfo_disch').value = cref.disch||0;
+      // PORT: every scrubber in this fleet is OPEN LOOP, per Mr. Amer, and open-loop washwater
+      // discharge is prohibited exactly where these ships call — Malaysia bans it within 12 nm of
+      // the nearest land (MSN 07/2019), Singapore inside port limits (PMC 19/2019), and the same
+      // applies at Chinese coastal ECA ports, Fujairah, Suez and the Panama Canal. The scrubber is
+      // therefore shut down alongside and the port burn must be a compliant grade. It is billed as
+      // LSMGO, which is the same treatment Mr. Amer set for Vera, Transtone and Lysandra.
+      // Second reason, independent of the ban: the scrubber covers the MAIN ENGINE only, so the
+      // boilers and generators that do the work in port were never scrubbed in the first place.
+      document.getElementById('cp_hsfo_load').value = 0;
+      document.getElementById('cp_hsfo_disch').value = 0;
+      document.getElementById('cp_lsmgo_load').value = cref.load||0;
+      document.getElementById('cp_lsmgo_disch').value = cref.disch||0;
       document.getElementById('cs_vlsfo_ballast').value = 0;
       document.getElementById('cs_vlsfo_laden').value = 0;
       document.getElementById('cp_vlsfo_load').value = 0;
@@ -12583,7 +12604,6 @@ document.getElementById('vessel_type').addEventListener('change', function(){
 });
 document.getElementById('speed').addEventListener('change', applyVesselConsumption);
 document.getElementById('scrubber').addEventListener('change', applyVesselConsumption);
-document.getElementById('eco').addEventListener('change', applyVesselConsumption);
 
 // Populate the shared datalist used by the Starting Point / Next Starting Point row pickers
 (function(){
