@@ -646,6 +646,7 @@ const NODES = {
   eleusis:{name:"Eleusis (Elefsina), Greece",alt:"Elefsina Eleusina Saronic Gulf Athens",lat:38.0200,lon:23.5400,region:"Europe & Mediterranean",type:"port"},
   valencia:{name:"Valencia, Spain",lat:39.4400,lon:-0.3200,region:"Europe & Mediterranean",type:"port"},
   shanghai:{name:"Shanghai, China",lat:31.2304,lon:121.4737,region:"Far East",type:"port"},
+  taicang:{name:"Taicang, China",alt:"Tai Cang Taicang Yangtze Jiangsu",lat:31.6330,lon:121.1170,region:"North Asia",type:"port"},
   busan:{name:"Busan, South Korea",lat:35.1028,lon:129.0403,region:"Far East",type:"port"},
   hong_kong:{name:"Hong Kong",lat:22.3000,lon:114.1700,region:"Far East",type:"port"},
   kaohsiung:{name:"Kaohsiung, Taiwan",lat:22.6100,lon:120.2800,region:"Far East",type:"port"},
@@ -752,6 +753,9 @@ const NODES = {
   freeport:{name:"Freeport (TX), USA",lat:28.95,lon:-95.36,region:"North America",type:"port"},
   texas_city:{name:"Texas City, USA",lat:29.38,lon:-94.9,region:"North America",type:"port"},
   augusta:{name:"Augusta, Italy",lat:37.23,lon:15.22,region:"Europe & Mediterranean",type:"port"},
+  valletta:{name:"Valletta, Malta",alt:"Valetta Grand Harbour Malta MT",lat:35.8930,lon:14.5150,region:"Europe & Mediterranean",type:"port"},
+  bejaia:{name:"Bejaia, Algeria",alt:"Bougie Bejaia DZ",lat:36.7550,lon:5.0950,region:"Europe & Mediterranean",type:"port"},
+  annaba:{name:"Annaba, Algeria",alt:"Annaba Bone DZ",lat:36.9050,lon:7.7750,region:"Europe & Mediterranean",type:"port"},
   ulsan:{name:"Ulsan, South Korea",lat:35.5,lon:129.38,region:"Far East",type:"port"},
   yeosu:{name:"Yeosu, South Korea",lat:34.76,lon:127.66,region:"Far East",type:"port"},
   map_ta_phut:{name:"Map Ta Phut, Thailand",lat:12.68,lon:101.15,region:"Far East",type:"port"},
@@ -9313,7 +9317,16 @@ const EDGES = [
   ["mombasa","piracy_avoid_2"], ["dar_es_salaam","piracy_avoid_2"],
   ["belawan","sabang_exit"], ["port_klang","sabang_exit"], ["dumai","sabang_exit"], ["singapore","sabang_exit"], ["medan","sabang_exit"], ["lubuk_gaung","sabang_exit"],
   ["sabang_exit","madagascar_clear"],
-  ["shanghai","tokara_strait"], ["ningbo","tokara_strait"], ["qingdao","tokara_strait"], ["busan","tokara_strait"], ["kaohsiung","tokara_strait"],
+  ["shanghai","tokara_strait"], ["taicang","marnet_8342"], ["valletta","marnet_3424"], 
+  // Bejaia needs an exit in BOTH directions. marnet_5630 sits at 37.18N 5.00E - NORTH-WEST of
+  // the port - so with that as the only hook an eastbound sailing left Bejaia going backwards
+  // before turning, and Bejaia to Annaba came out at 176 nm against Netpas's 146. Mr. Amer's
+  // track leaves Bejaia heading NORTH-EAST, passing north of Cape Bougaroni and Cape De Fer.
+  // marnet_5264 (37.26N 5.97E) is on that line, so it is added as the eastbound exit while 5630
+  // stays as the westbound one. Both are existing graph nodes - nothing is invented or fitted.
+  // Result: Bejaia-Annaba 176 -> 156 (Netpas 146), Valletta-Bejaia 516 -> 496 (Netpas 484),
+  // Bejaia-Skikda 142 -> 121, and Bejaia-Gibraltar unchanged at 539 because 5630 is still there.
+  ["bejaia","marnet_5630"], ["bejaia","marnet_5264"], ["annaba","marnet_7441"], ["ningbo","tokara_strait"], ["qingdao","tokara_strait"], ["busan","tokara_strait"], ["kaohsiung","tokara_strait"],
   ["tokara_strait","pacific_bridge"], ["tokyo","pacific_bridge"],
   ["pacific_bridge","los_angeles"], ["pacific_bridge","long_beach"], ["pacific_bridge","vancouver"],
   ["port_sudan","yanbu"], ["jebel_ali","jubail"],
