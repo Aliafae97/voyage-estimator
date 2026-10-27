@@ -482,6 +482,7 @@
           <option value="MR2" selected>MR2 Eco &middot; 40,000&ndash;55,000 DWT</option>
           <option value="MR1">MR1 &middot; 25,000&ndash;40,000 DWT</option>
           <option value="J19">J19 &middot; 20,000 DWT</option>
+          <option value="INF_LIGHT">INF LIGHT &middot; LR1 &middot; 72,736 DWT</option>
         </select>
       </div>
       <div class="field" style="grid-column:span 2;">
@@ -10905,15 +10906,15 @@ function vesselDraft(){ return parseNum(document.getElementById('vessel_draft').
 // 13,798; LOA median 182.9, with 183.0 the single most common figure). Anchors: Blossom Glory
 // GT 30,042 = 47,240 DWT, Pacific Spirit GT 30,101. Picking MR2 therefore loads a real median
 // ship and nobody has to type a particular \u2014 which is the point.
-const CLASS_GT = { J19:11954, HANDY:13500, MR1:23000, MR2:30000, LR1:42000, LR2:62000,
+const CLASS_GT = { INF_LIGHT:41583, J19:11954, HANDY:13500, MR1:23000, MR2:30000, LR1:42000, LR2:62000,
                    AFRAMAX:62000, SUEZMAX:82000, VLCC:162000 };
-const CLASS_NT = { J19:5756, HANDY:6300, MR1:11000, MR2:13800, LR1:22000, LR2:36000,
+const CLASS_NT = { INF_LIGHT:20922, J19:5756, HANDY:6300, MR1:11000, MR2:13800, LR1:22000, LR2:36000,
                    AFRAMAX:36000, SUEZMAX:53000, VLCC:110000 };
-const CLASS_LOA = { J19:147.83, HANDY:150, MR1:176, MR2:183, LR1:228, LR2:250,
+const CLASS_LOA = { INF_LIGHT:228.52, J19:147.83, HANDY:150, MR1:176, MR2:183, LR1:228, LR2:250,
                     AFRAMAX:250, SUEZMAX:274, VLCC:333 };
-const CLASS_BEAM  = { J19:24.2, HANDY:24, MR1:31, MR2:32.2, LR1:32.2, LR2:44,
+const CLASS_BEAM  = { INF_LIGHT:32.20, J19:24.2, HANDY:24, MR1:31, MR2:32.2, LR1:32.2, LR2:44,
                       AFRAMAX:44, SUEZMAX:48, VLCC:60 };
-const CLASS_DRAFT = { J19:9.437, HANDY:9.0, MR1:11.0, MR2:13.0, LR1:12.6, LR2:14.9,
+const CLASS_DRAFT = { INF_LIGHT:14.383, J19:9.437, HANDY:9.0, MR1:11.0, MR2:13.0, LR1:12.6, LR2:14.9,
                       AFRAMAX:14.9, SUEZMAX:16.1, VLCC:22.5 };
 
 // ---------- What these ports ACTUALLY cost, from GHS's own voyage records ----------
@@ -11071,6 +11072,29 @@ const CONSUMPTION_REF = {"J19":{"ballast":14.8,"laden":15,"idle":4.3,"load":5.1,
 // names no grade. Note that Q88 item 10.13 records no scrubber on any of the four, which would
 // normally rule out a high-sulphur grade — the sheets are being taken as ruling regardless.
 const SPOT_VESSEL_CURVES = {
+  // MT INF LIGHT — LR1, 72,736 SDWT. Her own SPEED CONSUMPTION sheet and her Q88 V5 of
+  // 25 Sep 2024 are both on file, so nothing about her is estimated.
+  //   Q88  LOA 228.52 m, extreme beam 32.20 m, summer draft 14.383 m, GT 41,583, NT 20,922,
+  //        SDWT 72,736 mt. Multiple loadlines are assigned (72,736 / 69,875 / 59,875 / 55,000).
+  //   S&C  four real speed points, M/E plus A/E already summed, which is how this tool stores
+  //        sea figures. A/E is a flat 3.6 mt/day at every speed on her sheet.
+  // FUEL. Her sheet says plainly: "VESSEL EQUIPPED WITH SCRUBBER, AUX. BOILER USE MGO EITHER AT
+  // SEA OR AT PORT", and her IFO spec is RMG380 at 3.5% sulphur. So HSFO at sea with the scrubber
+  // running, and the port burn billed as LSMGO — which is both what her own remark says and the
+  // same treatment Mr. Amer set for Vera, Transtone and Lysandra. It also agrees with the open-loop
+  // rule already in this tool: discharge is banned inside port limits in Malaysia, Singapore and
+  // the other places these ships call, so the scrubber is shut down alongside anyway.
+  // NOTE her sheet's own MGO column reads 0.0 against every port state, which contradicts the
+  // boiler remark above. The remark is taken as ruling because a 38.5 mt/day discharging figure is
+  // mostly boiler and IG, and a scrubber cannot be running alongside.
+  // CARGO HEATING IS NOT APPLIED AUTOMATICALLY, same as J19: her sheet carries 14.5 mt/day to hold
+  // 57 C and 16.5 to raise 3 C/day, which only bite on a heated parcel. Add them by hand when they
+  // apply — on a long laden leg they are a third as much again on top of the sea figure.
+  INF_LIGHT: {
+    ballast: [[10,25.6],[11,28.6],[12,32.1],[13,35.1]],
+    laden:   [[10,28.1],[11,31.1],[12,33.6],[13,36.6]],
+    portLoading: 0, portDischargingFO: 0, portLoadingDO: 5.3, portDischargingDO: 38.5
+  },
   // MT VERA — IMO 9292278, 2005 Hyundai Mipo, 42,630 DWT. Her sheet gives ONE flat pair with no
   // speed stated, so a single curve point is used deliberately: interpolateCurve clamps outside
   // its range, so these figures return unchanged at any speed rather than being extrapolated.
@@ -11159,6 +11183,9 @@ const VESSEL_REF = {
   // Her warranted speed is 11.5 kn, slower than the MR2 default \u2014 worth setting on the voyage.
   "J19":     { isClass:true, sizeClass:"HANDY", consumClass:"J19" },
   "LR1":     { isClass:true, sizeClass:"LR1",   consumClass:"LR1" },
+  // MT INF LIGHT carries her own measured curve, so she overrides the generic LR1 figures.
+  // mainFuel HSFO means picking her ticks "Scrubber fitted" automatically — she has one.
+  "INF_LIGHT": { isClass:true, mainFuel:"HSFO", sizeClass:"LR1", hasRealCurve:true, curve:SPOT_VESSEL_CURVES.INF_LIGHT },
   "LR2":     { isClass:true, sizeClass:"LR2",   consumClass:"LR2" },
   "AFRAMAX": { isClass:true, sizeClass:"AFRA",  consumClass:"AFRA" },
   "SUEZMAX": { isClass:true, sizeClass:"SUEZ",  consumClass:"SUEZ" },
