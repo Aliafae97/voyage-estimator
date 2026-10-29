@@ -600,6 +600,9 @@ const NODES = {
   singapore:{name:"Singapore",lat:1.2650,lon:103.8200,region:"Malaysia & Indonesia",type:"port"},
   jakarta:{name:"Jakarta (Tg. Priok), Indonesia",lat:-6.1050,lon:106.8800,region:"Malaysia & Indonesia",type:"port"},
   surabaya:{name:"Surabaya, Indonesia",lat:-7.2000,lon:112.7333,region:"Malaysia & Indonesia",type:"port"},
+  merak:{name:"Merak, Indonesia",alt:"Merak Banten Sunda Strait ID",lat:-5.9300,lon:105.9900,region:"Malaysia & Indonesia",type:"port"},
+  tuban:{name:"Tuban, Indonesia",alt:"Tuban East Java ID",lat:-6.8700,lon:112.0600,region:"Malaysia & Indonesia",type:"port"},
+  muara:{name:"Muara, Brunei",alt:"Muara Brunei Darussalam BN",lat:5.0200,lon:115.0700,region:"Malaysia & Indonesia",type:"port"},
   pasir_gudang:{name:"Pasir Gudang, Malaysia",lat:1.4667,lon:103.9000,region:"Malaysia & Indonesia",type:"port"},
   singapore_east_opl:{name:"Singapore East OPL",lat:1.294,lon:104.107,region:"Malaysia & Indonesia",type:"port"},
   medan:{name:"Medan (via Belawan), Indonesia",lat:3.7833,lon:98.6833,region:"Malaysia & Indonesia",type:"port"},
@@ -805,6 +808,7 @@ const NODES = {
   gelidonya_clear:{name:"Off Cape Gelidonya (5 Islands hazard)",lat:35.76,lon:30.66,type:"waypoint"},
   pemba_clear:{name:"E. of Pemba Island",lat:-5.5,lon:40.0,type:"waypoint"},
   mtwara_offshore:{name:"Offshore Mtwara",lat:-10.30,lon:41.70,type:"waypoint"},
+  karimata_mid:{name:"Karimata Strait (mid-channel)",lat:-1.00,lon:108.40,type:"waypoint"},
   mg_manakara:{name:"Off Manakara, E. Madagascar",lat:-22.130,lon:48.860,type:"waypoint"},
   mg_taolagnaro:{name:"Off Taolagnaro (Fort Dauphin)",lat:-25.030,lon:47.830,type:"waypoint"},
   mg_cap_ste_marie:{name:"S. of Cap Sainte Marie",lat:-26.130,lon:45.160,type:"waypoint"},
@@ -9334,7 +9338,26 @@ const EDGES = [
   ["mombasa","guardafui_clear"], ["fujairah","guardafui_clear"], ["jubail","guardafui_clear"], ["ras_tanura","guardafui_clear"],
   ["marnet_952","necochea"], ["marnet_952","buenos_aires"], ["marnet_952","montevideo"],
   ["madagascar_clear","durban"], ["madagascar_clear","cape_town"], ["madagascar_clear","richards_bay"],
-  ["port_klang","marnet_134"], ["belawan","marnet_7415"], ["singapore","marnet_2869"], ["jakarta","marnet_1544"], ["surabaya","marnet_7266"], ["pasir_gudang","marnet_7112"], ["medan","marnet_7415"], ["kijing","marnet_1139"], ["batam","marnet_2869"], ["lubuk_gaung","marnet_1996"], ["aden","marnet_3016"], ["hodeidah","marnet_4285"], ["jeddah","marnet_8338"], ["marnet_8338","jeddah_rabigh_offshore"], ["jeddah_rabigh_offshore","rabigh"], ["suez","marnet_3179"], ["suez","marnet_3180"], ["suez","adabiya"], ["marnet_3125","recalada"], ["marnet_2342","yanbu"], ["port_said","marnet_3182"], ["port_said","suez_canal_north"], ["suez_canal_north","marnet_3180"], ["alexandria","marnet_1774"], ["djibouti","marnet_7802"], ["marnet_8030","marnet_724"], ["marnet_7803","marnet_4231"], ["adabiya","marnet_3179"], ["mombasa","marnet_7464"], ["marnet_7464","pemba_clear"], ["pemba_clear","marnet_5665"], ["dar_es_salaam","marnet_5665"],
+  ["port_klang","marnet_134"], ["belawan","marnet_7415"], ["singapore","marnet_2869"], ["jakarta","marnet_1544"], ["surabaya","marnet_7266"], 
+  // Merak, Tuban and Muara. Each needs exits in the directions it is actually sailed, the same
+  // lesson as Bejaia. Muara on marnet_7128 alone sent a southbound ship 82 nm NORTH first,
+  // because 7128's only onward link climbs away from the Sarawak corridor; marnet_5760 joins
+  // that corridor directly. Tuban on marnet_7266 alone overshot 35 nm EAST towards Surabaya
+  // before turning back west, so marnet_4643 is added as the western exit.
+  // Against Netpas: Merak-Muara 1,033 -> 999 here (-3.3%), Muara-Tuban 1,020 -> 1,144 (+12.2%).
+  // The Muara-Tuban residual is the graph's own resolution along the Sarawak and Kalimantan
+  // west coast, not the hooks - every hook combination tried left it between +12% and +22%.
+  // All four are existing graph nodes; nothing is invented or fitted.
+  ["merak","marnet_1545"], ["tuban","marnet_7266"], ["tuban","marnet_4643"], ["muara","marnet_7128"], ["muara","marnet_5760"],
+  // Karimata Strait. Between marnet_906 (2.24N 109.10E) and marnet_2136 (2.75S 109.38E) the
+  // graph had no link, so a Muara-Tuban run was pushed WEST to 107.5E and back east again -
+  // 377 nm for a 300 nm gap. Mr. Amer's Netpas track runs straight south down the strait.
+  // This waypoint carries that line: 319 nm through, saving 57. It sits mid-channel with
+  // 119 nm of clearance from Belitung and 45 nm from the west Kalimantan coast, so it is open
+  // water by a wide margin - the position is chosen for that clearance, not read off the chart.
+  // A direct 906-2136 edge was rejected: it would pass about 109.2E at the equator, which is
+  // on the Kalimantan shore near Pontianak.
+  ["marnet_906","karimata_mid"], ["karimata_mid","marnet_2136"], ["pasir_gudang","marnet_7112"], ["medan","marnet_7415"], ["kijing","marnet_1139"], ["batam","marnet_2869"], ["lubuk_gaung","marnet_1996"], ["aden","marnet_3016"], ["hodeidah","marnet_4285"], ["jeddah","marnet_8338"], ["marnet_8338","jeddah_rabigh_offshore"], ["jeddah_rabigh_offshore","rabigh"], ["suez","marnet_3179"], ["suez","marnet_3180"], ["suez","adabiya"], ["marnet_3125","recalada"], ["marnet_2342","yanbu"], ["port_said","marnet_3182"], ["port_said","suez_canal_north"], ["suez_canal_north","marnet_3180"], ["alexandria","marnet_1774"], ["djibouti","marnet_7802"], ["marnet_8030","marnet_724"], ["marnet_7803","marnet_4231"], ["adabiya","marnet_3179"], ["mombasa","marnet_7464"], ["marnet_7464","pemba_clear"], ["pemba_clear","marnet_5665"], ["dar_es_salaam","marnet_5665"],
   // The Tanzania/Mozambique coastal corridor. Without it the graph had only four nodes in the
   // whole box from 9S to 16S and 39E to 43E, so a Dar es Salaam - Nacala run had to swing out
   // east to (-12.0, 43.0) near the Comoros and double back: 692 nm against Netpas's 528.
