@@ -600,6 +600,7 @@ const NODES = {
   singapore:{name:"Singapore",lat:1.2650,lon:103.8200,region:"Malaysia & Indonesia",type:"port"},
   jakarta:{name:"Jakarta (Tg. Priok), Indonesia",lat:-6.1050,lon:106.8800,region:"Malaysia & Indonesia",type:"port"},
   surabaya:{name:"Surabaya, Indonesia",lat:-7.2000,lon:112.7333,region:"Malaysia & Indonesia",type:"port"},
+  baubau:{name:"Baubau, Indonesia",alt:"Bau-Bau Buton Sulawesi ID",lat:-5.4700,lon:122.6200,region:"Malaysia & Indonesia",type:"port"},
   merak:{name:"Merak, Indonesia",alt:"Merak Banten Sunda Strait ID",lat:-5.9300,lon:105.9900,region:"Malaysia & Indonesia",type:"port"},
   tuban:{name:"Tuban, Indonesia",alt:"Tuban East Java ID",lat:-6.8700,lon:112.0600,region:"Malaysia & Indonesia",type:"port"},
   muara:{name:"Muara, Brunei",alt:"Muara Brunei Darussalam BN",lat:5.0200,lon:115.0700,region:"Malaysia & Indonesia",type:"port"},
@@ -693,10 +694,14 @@ const NODES = {
   necochea:{name:"Necochea, Argentina",lat:-38.5545,lon:-58.7500,region:"South America",type:"port"},
   montevideo:{name:"Montevideo, Uruguay",lat:-34.9000,lon:-56.2100,region:"South America",type:"port"},
   recalada:{name:"Recalada (Rio de la Plata Pilot Station)",lat:-35.0667,lon:-56.0,region:"South America",type:"port"},
-  fremantle:{name:"Fremantle, Australia",lat:-32.0600,lon:115.7500,region:"Australia & Oceania",type:"port"},
+  fremantle:{name:"Fremantle (Perth), Australia",alt:"Perth Kwinana Fremantle AU",lat:-32.0600,lon:115.7500,region:"Australia & Oceania",type:"port"},
   sydney:{name:"Sydney, Australia",lat:-33.8700,lon:151.2100,region:"Australia & Oceania",type:"port"},
   melbourne:{name:"Melbourne, Australia",lat:-37.8400,lon:144.9400,region:"Australia & Oceania",type:"port"},
+  geelong:{name:"Geelong, Australia",alt:"Geelong Corio Bay Port Phillip AU",lat:-38.1000,lon:144.3800,region:"Australia & Oceania",type:"port"},
+  adelaide:{name:"Adelaide, Australia",alt:"Adelaide Outer Harbor Port Adelaide AU",lat:-34.7800,lon:138.4800,region:"Australia & Oceania",type:"port"},
   brisbane:{name:"Brisbane, Australia",lat:-27.4700,lon:153.0300,region:"Australia & Oceania",type:"port"},
+  darwin:{name:"Darwin, Australia",alt:"Darwin East Arm NT AU",lat:-12.4700,lon:130.8400,region:"Australia & Oceania",type:"port"},
+  townsville:{name:"Townsville, Australia",alt:"Townsville QLD AU",lat:-19.2500,lon:146.8200,region:"Australia & Oceania",type:"port"},
   rabigh:{name:"Rabigh, Saudi Arabia",lat:22.7986,lon:39.0464,region:"Red Sea & Egypt",type:"port"},
   yanbu:{name:"Yanbu, Saudi Arabia",lat:24.0895,lon:38.0618,region:"Red Sea & Egypt",type:"port"},
   jizan:{name:"Gizan, Saudi Arabia",lat:16.8892,lon:42.5511,region:"Red Sea & Egypt",type:"port"},
@@ -809,6 +814,7 @@ const NODES = {
   pemba_clear:{name:"E. of Pemba Island",lat:-5.5,lon:40.0,type:"waypoint"},
   mtwara_offshore:{name:"Offshore Mtwara",lat:-10.30,lon:41.70,type:"waypoint"},
   karimata_mid:{name:"Karimata Strait (mid-channel)",lat:-1.00,lon:108.40,type:"waypoint"},
+  port_phillip_heads:{name:"Port Phillip Heads",lat:-38.29,lon:144.62,type:"waypoint"},
   mg_manakara:{name:"Off Manakara, E. Madagascar",lat:-22.130,lon:48.860,type:"waypoint"},
   mg_taolagnaro:{name:"Off Taolagnaro (Fort Dauphin)",lat:-25.030,lon:47.830,type:"waypoint"},
   mg_cap_ste_marie:{name:"S. of Cap Sainte Marie",lat:-26.130,lon:45.160,type:"waypoint"},
@@ -9338,7 +9344,19 @@ const EDGES = [
   ["mombasa","guardafui_clear"], ["fujairah","guardafui_clear"], ["jubail","guardafui_clear"], ["ras_tanura","guardafui_clear"],
   ["marnet_952","necochea"], ["marnet_952","buenos_aires"], ["marnet_952","montevideo"],
   ["madagascar_clear","durban"], ["madagascar_clear","cape_town"], ["madagascar_clear","richards_bay"],
-  ["port_klang","marnet_134"], ["belawan","marnet_7415"], ["singapore","marnet_2869"], ["jakarta","marnet_1544"], ["surabaya","marnet_7266"], 
+  ["port_klang","marnet_134"], ["belawan","marnet_7415"], ["singapore","marnet_2869"], ["jakarta","marnet_1544"], ["surabaya","marnet_7266"],
+  // BAUBAU sits on the WEST coast of Buton Island, on the Buton Strait, so its two exits are
+  // both to the south - there is no way east except round the island. Two hooks:
+  //   marnet_6919 (6.09S 122.80E), 39 nm SSE - round the south end of Buton and then east,
+  //     which is exactly the line Mr. Amer's Netpas track takes towards Bitung.
+  //   marnet_5895 (5.85S 121.70E), 60 nm SW - out into the Flores Sea towards Surabaya.
+  // marnet_7777 (5.08S 123.50E) was REJECTED even though it scored best on paper (Bitung 503
+  // against 552). It lies NORTH-EAST of Baubau and the line to it runs straight over Buton
+  // Island; its only onward link is marnet_706, which the route already reaches legitimately
+  // by going round the south. A 50 nm gain is not worth a leg that crosses land.
+  // marnet_2210 was also rejected: due west, but the line clips Kabaena Island. marnet_5895
+  // passes about 14 nm south of it.
+  ["baubau","marnet_6919"], ["baubau","marnet_5895"], 
   // Merak, Tuban and Muara. Each needs exits in the directions it is actually sailed, the same
   // lesson as Bejaia. Muara on marnet_7128 alone sent a southbound ship 82 nm NORTH first,
   // because 7128's only onward link climbs away from the Sarawak corridor; marnet_5760 joins
@@ -9377,7 +9395,44 @@ const EDGES = [
   // SAME CAVEAT AS THE MTWARA/PEMBA PAIR: the latitudes are the real coastal features, the
   // offshore offset (+0.84 deg of longitude, and 0.55 deg south of the cape) is SOLVED to
   // reproduce 1,267, not measured off the chart. Replace if Netpas will export real waypoints.
-  ["toamasina","mg_manakara"], ["mg_manakara","mg_taolagnaro"], ["mg_taolagnaro","mg_cap_ste_marie"], ["mg_cap_ste_marie","beira"], ["richards_bay","marnet_8244"], ["port_sudan","marnet_2680"], ["toamasina","marnet_1094"], ["toliara","marnet_7789"], ["durban","marnet_8244"], ["cape_town","marnet_4444"], ["lagos","marnet_8137"], ["dakar","marnet_913"], ["pointe_noire","marnet_8206"], ["abidjan","marnet_7715"], ["tema","marnet_6915"], ["luanda","marnet_6154"], ["walvis_bay","marnet_7431"], ["gibraltar","marnet_5414"], ["mersin","marnet_7410"], ["toros","marnet_4453"], ["toros","marnet_4454"], ["izmir","marnet_8035"], ["izmit","marnet_8166"], ["london","marnet_7500"], ["rotterdam","marnet_7218"], ["amsterdam","marnet_8288"], ["hamburg","marnet_7835"], ["antwerp","marnet_7761"], ["le_havre","marnet_3230"], ["piraeus","marnet_6541"], ["eleusis","marnet_6541"], ["aliaga","marnet_5752"], ["valencia","marnet_638"], ["shanghai","marnet_8342"], ["busan","marnet_453"], ["hong_kong","marnet_3021"], ["kaohsiung","marnet_7047"], ["ho_chi_minh","marnet_8040"], ["manila","marnet_7640"], ["tokyo","marnet_6937"], ["chiba","marnet_6937"], ["chiba","tokyo"], ["qingdao","marnet_6234"], ["ningbo","marnet_4793"], ["fujairah","marnet_4749"], ["colombo","marnet_6983"], ["mumbai","marnet_7667"], ["kandla","marnet_5237"], ["cochin","marnet_7385"], ["chennai","marnet_4691"], ["kolkata","marnet_4920"], ["visakhapatnam","marnet_7796"], ["nhava_sheva","marnet_7667"], ["dammam","marnet_879"], ["kuwait_port","marnet_8213"], ["bandar_abbas","marnet_6203"], ["jebel_ali","marnet_8200"], ["new_york","marnet_4675"], ["savannah","marnet_8181"], ["houston","marnet_7075"], ["new_orleans","marnet_6904"], ["los_angeles","marnet_414"], ["long_beach","marnet_414"], ["vancouver","marnet_828"], ["panama_colon","marnet_7009"], ["panama_balboa","marnet_5811"], ["kingston_jamaica","marnet_7751"], ["cartagena_colombia","marnet_8267"], ["guayaquil","marnet_7876"], ["callao","marnet_6651"], ["valparaiso","marnet_6350"], ["santos","marnet_5479"], ["rio_de_janeiro","marnet_8211"], ["buenos_aires","marnet_6705"], ["necochea","marnet_7773"], ["montevideo","marnet_237"], ["recalada","marnet_238"], ["recalada","marnet_237"], ["fremantle","marnet_1533"], ["sydney","marnet_1516"], ["melbourne","marnet_8065"], ["brisbane","marnet_4549"],
+  ["toamasina","mg_manakara"], ["mg_manakara","mg_taolagnaro"], ["mg_taolagnaro","mg_cap_ste_marie"], ["mg_cap_ste_marie","beira"], ["richards_bay","marnet_8244"], ["port_sudan","marnet_2680"], ["toamasina","marnet_1094"], ["toliara","marnet_7789"], ["durban","marnet_8244"], ["cape_town","marnet_4444"], ["lagos","marnet_8137"], ["dakar","marnet_913"], ["pointe_noire","marnet_8206"], ["abidjan","marnet_7715"], ["tema","marnet_6915"], ["luanda","marnet_6154"], ["walvis_bay","marnet_7431"], ["gibraltar","marnet_5414"], ["mersin","marnet_7410"], ["toros","marnet_4453"], ["toros","marnet_4454"], ["izmir","marnet_8035"], ["izmit","marnet_8166"], ["london","marnet_7500"], ["rotterdam","marnet_7218"], ["amsterdam","marnet_8288"], ["hamburg","marnet_7835"], ["antwerp","marnet_7761"], ["le_havre","marnet_3230"], ["piraeus","marnet_6541"], ["eleusis","marnet_6541"], ["aliaga","marnet_5752"], ["valencia","marnet_638"], ["shanghai","marnet_8342"], ["busan","marnet_453"], ["hong_kong","marnet_3021"], ["kaohsiung","marnet_7047"], ["ho_chi_minh","marnet_8040"], ["manila","marnet_7640"], ["tokyo","marnet_6937"], ["chiba","marnet_6937"], ["chiba","tokyo"], ["qingdao","marnet_6234"], ["ningbo","marnet_4793"], ["fujairah","marnet_4749"], ["colombo","marnet_6983"], ["mumbai","marnet_7667"], ["kandla","marnet_5237"], ["cochin","marnet_7385"], ["chennai","marnet_4691"], ["kolkata","marnet_4920"], ["visakhapatnam","marnet_7796"], ["nhava_sheva","marnet_7667"], ["dammam","marnet_879"], ["kuwait_port","marnet_8213"], ["bandar_abbas","marnet_6203"], ["jebel_ali","marnet_8200"], ["new_york","marnet_4675"], ["savannah","marnet_8181"], ["houston","marnet_7075"], ["new_orleans","marnet_6904"], ["los_angeles","marnet_414"], ["long_beach","marnet_414"], ["vancouver","marnet_828"], ["panama_colon","marnet_7009"], ["panama_balboa","marnet_5811"], ["kingston_jamaica","marnet_7751"], ["cartagena_colombia","marnet_8267"], ["guayaquil","marnet_7876"], ["callao","marnet_6651"], ["valparaiso","marnet_6350"], ["santos","marnet_5479"], ["rio_de_janeiro","marnet_8211"], ["buenos_aires","marnet_6705"], ["necochea","marnet_7773"], ["montevideo","marnet_237"], ["recalada","marnet_238"], ["recalada","marnet_237"], ["fremantle","marnet_1533"], ["sydney","marnet_1516"], ["melbourne","marnet_8065"],
+  // Geelong sits inside Port Phillip, so it hangs off the same bay node Melbourne uses.
+  // Adelaide picks up a waypoint 6 nm off Outer Harbour. "Perth (AU)" in Netpas is 0.8 nm from
+  // the Fremantle node already here, so Perth and Kwinana are added as SEARCH ALIASES on
+  // Fremantle rather than as a second port node on top of the first.
+  ["geelong","marnet_8065"], ["adelaide","marnet_2684"],
+  // PORT PHILLIP HEADS. The bay has ONE entrance and the graph did not have it, so everything
+  // in and out of Melbourne and Geelong was routed through marnet_8065 up inside the bay and
+  // then 42 nm SW past the entrance before doubling back. Geelong sits on the WEST side of the
+  // bay, so that cost it 152 nm on a 500 nm run to Adelaide - 30% - and Sydney-Melbourne 36 nm.
+  // 38.29S 144.62E is the Rip itself, a fixed navigational feature, not a fitted position.
+  ["port_phillip_heads","marnet_8065"], ["port_phillip_heads","marnet_7531"], ["geelong","port_phillip_heads"],
+  // GULF ST VINCENT. marnet_8228 (35.70S 138.00E, off Backstairs Passage) and marnet_2684
+  // (34.88S 138.48E, off Outer Harbour) are 55 nm apart straight up the gulf, but the graph
+  // had no link, so an Adelaide call was dragged 68 nm WEST to Kangaroo Island and 101 nm back
+  // - 169 nm for a 55 nm run, which is the whole of the Geelong-Adelaide error.
+  // The line stays inside Gulf St Vincent and passes north of Kangaroo Island throughout:
+  // marnet_8228 already lies north of the island in Backstairs Passage and the track runs away
+  // from it, north-east up the gulf.
+  ["marnet_8228","marnet_2684"], ["brisbane","marnet_4549"], 
+  // Darwin gets two exits: marnet_5622 just outside the harbour, and marnet_6046 in Van Diemen
+  // Gulf, which is the real eastbound way out through Dundas Strait. A shorter hook straight to
+  // marnet_4586 was rejected - that line passes about 11.5S 131.3E, which is on Melville Island.
+  ["darwin","marnet_5622"], ["darwin","marnet_6046"], ["townsville","marnet_6819"],
+  // ARAFURA SEA. Mr. Amer's track runs DEAD STRAIGHT at about 10.5S from the Top End to
+  // Thursday Island, north of the Wessel Islands. The graph had no such link, so it climbed to
+  // 8.98S and came back down - 680 nm to cover 610. marnet_4586 (10.50S) and marnet_1616
+  // (10.55S, in Torres Strait) are both already on that latitude, so one edge carries it.
+  // Clearance: Cape Wessel, the northernmost of the Wessel Islands, is at 10.95S - 27 nm south
+  // of the line. Cobourg Peninsula, Croker, Goulburn and Elcho are all further south again,
+  // and the PNG coast is north of it.
+  ["marnet_4586","marnet_1616"],
+  // TIMOR SEA approach to Darwin. The WA coast route dipped SE to 14.50S 128.40E, inside the
+  // Joseph Bonaparte Gulf, then back NE to Darwin - 310 nm for a 230 nm run. marnet_2006
+  // (13.20S 127.00E) joins Darwin's own approach node directly. The line stays offshore
+  // throughout: it passes 12.83S at 128.4E, about 80 nm north of the Kimberley coast, and
+  // reaches Darwin from the WEST, south of Bathurst and Melville Islands.
+  ["marnet_2006","marnet_5622"],
   ["rabigh","jeddah_rabigh_offshore"], ["yanbu","marnet_7821"], ["yanbu","marnet_7634"], ["jizan","marnet_724"], ["jubail","marnet_4934"], ["ras_tanura","marnet_879"], ["mundra","marnet_5237"], ["tuticorin","marnet_7351"], ["paradip","marnet_6805"], ["ennore","marnet_4691"], ["haldia","marnet_4920"], ["new_mangalore","marnet_7982"], ["krishnapatnam","marnet_4691"], ["goa","marnet_7982"], ["bahia_blanca","marnet_2600"], ["rosario","marnet_6705"], ["la_plata","marnet_6705"], ["paranagua","marnet_3957"], ["itaqui","marnet_567"], ["suape","marnet_6105"], ["fortaleza","marnet_6221"], ["belem","marnet_7309"], ["salvador","marnet_818"],
   ["suape","cabo_sao_roque"], ["cabo_sao_roque","marnet_7749"], ["vitoria","marnet_817"], ["rio_grande","marnet_3125"], ["itajai","marnet_3956"], ["buenaventura","marnet_229"], ["paita","marnet_8110"], ["san_antonio","marnet_6350"], ["nueva_palmira","marnet_6705"], ["skikda","marnet_8103"], ["lavera","marnet_4149"], ["skikda","lavera"], ["qidong","marnet_8342"], ["pulau_laut","marnet_7379"], ["pulau_laut","marnet_7995"], ["pulau_laut","marnet_2137"], ["singapore","johor_e_corner"], ["johor_e_corner","pasir_gudang"], ["marnet_1573","mombasa"], ["marnet_3428","marnet_1573"], ["lianyungang","marnet_6507"], ["tanjung_bin","marnet_7112"], ["tanjung_bin","marnet_2869"], ["singapore_east_opl","johor_e_corner"], ["singapore_east_opl","singapore"], ["marnet_2680","marnet_639"], ["sohar","marnet_4749"], ["sohar","sohar_fujairah_coast"], ["sohar_fujairah_coast","fujairah"], ["zhoushan","marnet_2839"], ["berbera","marnet_6072"], ["pengerang","marnet_1160"], ["pengerang","johor_e_corner"], ["sikka","marnet_5237"], ["fos","marnet_4149"], ["fos","lavera"], ["ruwais","marnet_1177"], ["sitra","marnet_878"], ["mina_al_ahmadi","marnet_8213"], ["vadinar","marnet_5237"], ["corpus_christi","marnet_987"], ["beaumont","marnet_3116"], ["port_arthur","marnet_3116"], ["freeport","marnet_7958"], ["texas_city","marnet_7074"], ["augusta","marnet_5658"], ["ulsan","marnet_453"], ["yeosu","marnet_632"], ["map_ta_phut","marnet_463"], ["melaka","marnet_1995"], ["kuala_tanjung","marnet_7415"], ["bitung","marnet_6244"], ["pontianak","marnet_1139"], ["lumut","marnet_6489"], ["kuantan","marnet_1159"], ["bintulu","marnet_7120"], ["sandakan","marnet_6738"], ["lahad_datu","marnet_919"], ["kunak","lahad_datu"], ["kakinada","marnet_6861"], ["bandar_imam_khomeini","marnet_8172"], ["balikpapan","marnet_8305"], ["tanjung_langsat","johor_e_corner"], ["tartous","marnet_3793"], ["canakkale","marnet_8298"], ["patras","marnet_7118"], ["odessa","marnet_7476"], ["burgas","marnet_8250"], ["hazira","marnet_7667"], ["hazira","diu_offshore"], ["diu_offshore","marnet_5237"], ["panjang","marnet_3224"], ["qidong","taiwan_e1"], ["shanghai","taiwan_e1"], ["ningbo","taiwan_e1"], ["zhoushan","taiwan_e1"], ["taiwan_e1","taiwan_e2"], ["taiwan_e2","luzon_nw"], ["luzon_nw","luzon_w"], ["luzon_w","manila"],
   ["new_mangalore","cochin"], ["suape","salvador"],
