@@ -665,6 +665,8 @@ const NODES = {
   vip_cape_santiago:{name:"Cape Santiago (SW of cape)",lat:13.6800,lon:120.5800,type:"waypoint"},
   vip_lubang_n:{name:"Lubang Channel (N of Lubang Is.)",lat:14.0000,lon:120.4500,type:"waypoint"},
   vip_mindoro_n:{name:"Mindoro Strait (N entrance)",lat:13.5300,lon:120.2500,type:"waypoint"},
+  davao:{name:"Davao, Philippines",alt:"Davao City Mindanao Sasa PH",lat:7.0700,lon:125.6000,region:"North Asia",type:"port"},
+  general_santos:{name:"General Santos, Philippines",alt:"GenSan Sarangani Bay Makar Mindanao PH",lat:6.1000,lon:125.1700,region:"North Asia",type:"port"},
   batangas:{name:"Batangas, Philippines",alt:"Batangas Bay Luzon PH",lat:13.7500,lon:121.0500,region:"North Asia",type:"port"},
   tokyo:{name:"Tokyo, Japan",lat:35.6100,lon:139.7800,region:"Far East",type:"port"},
   kawasaki:{name:"Kawasaki, Japan",alt:"Kawasaki Tokyo Bay JP",lat:35.5100,lon:139.7300,region:"North Asia",type:"port"},
@@ -9380,6 +9382,15 @@ const EDGES = [
   // turning west again. 7192-bintulu runs parallel to the Sarawak coast 14-32 nm offshore and
   // takes Batangas-Bintulu from 856 to 815 against Netpas 808. The coastal chain is kept.
   ["marnet_7192","bintulu"],
+  // DAVAO sits at the head of Davao Gulf, which opens south. marnet_2859 (5.70N 125.80E) is at
+  // the gulf mouth and the line down the gulf stays mid-channel between the west shore and Samal.
+  ["davao","marnet_2859"],
+  // GENERAL SANTOS is in Sarangani Bay. Two exits: marnet_7134 (5.22N 125.77E) passes 8 nm east
+  // of Sarangani Island through the strait, for anything bound east or north up to Davao;
+  // marnet_2860 (4.79N 124.63E) runs 30 nm off the Mindanao south coast into the Celebes Sea,
+  // for the westbound leg to Borneo. A direct general_santos-marnet_2859 edge was rejected: it
+  // passes within 2 nm of the Mindanao coast east of the bay mouth.
+  ["general_santos","marnet_7134"], ["general_santos","marnet_2860"],
   ["pacific_bridge","los_angeles"], ["pacific_bridge","long_beach"], ["pacific_bridge","vancouver"],
   ["port_sudan","yanbu"], ["jebel_ali","jubail"],
   ["mombasa","guardafui_clear"], ["fujairah","guardafui_clear"], ["jubail","guardafui_clear"], ["ras_tanura","guardafui_clear"],
