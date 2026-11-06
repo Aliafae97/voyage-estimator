@@ -433,7 +433,7 @@
 
     <div class="routepref">
       <span class="routepref-head">Routing Preference</span>
-      <label class="routeopt"><input type="checkbox" id="avoid_suez" checked> Avoid Suez (route via Cape of Good Hope)</label>
+      <label class="routeopt"><input type="checkbox" id="avoid_bab" checked> Avoid Bab el-Mandeb (route via Cape of Good Hope)</label>
       <label class="routeopt"><input type="checkbox" id="avoid_piracy" checked> Avoid Gulf of Aden / Somali piracy area</label>
     </div>
   </div>
@@ -9335,7 +9335,15 @@ const EDGES = [
   ["mg_cap_ambre","marnet_947"], ["mg_cap_ambre","moz_chan_north"],
   ["moz_chan_north","marnet_5512"], ["moz_chan_north","marnet_4406"],
   ["marnet_6926","aldabra_south"], ["aldabra_south","mg_cap_ambre"],
-  ["aden","piracy_avoid_1"], ["djibouti","piracy_avoid_1"], ["hodeidah","piracy_avoid_1"], ["jeddah","piracy_avoid_1"],
+  /* piracy_avoid_1 (4.00N 61.00E, Arabian Sea) also carried direct edges to JEDDAH (1,648 nm),
+     HODEIDAH (1,249 nm) and DJIBOUTI (1,155 nm). All three are straight lines over land - Jeddah
+     and Hodeidah cross the Arabian Peninsula, Djibouti crosses inland Somalia - and all three
+     skip Bab el-Mandeb entirely, so a Red Sea port could reach the Arabian Sea without passing
+     the strait. They are removed. With the avoid-Bab flag on they cost 6,900 nm on
+     Jeddah-Singapore (6,438 instead of 13,359) and 1,300 nm on Rotterdam-Singapore. Nothing
+     changes with the flag off: the shortest path never used them. aden-piracy_avoid_1 is kept -
+     it is the only one of the four that stays on water, and Aden is south of the strait. */
+  ["aden","piracy_avoid_1"],
   ["hodeidah","jeddah"],
   ["piracy_avoid_1","piracy_avoid_2"],
   ["mombasa","piracy_avoid_2"], ["dar_es_salaam","piracy_avoid_2"],
@@ -9519,7 +9527,15 @@ function pairSet(pairs){
   pairs.forEach(([a,b])=>{ s.add(a+'|'+b); s.add(b+'|'+a); });
   return s;
 }
-const SUEZ_EDGE_SET = pairSet(PASS_EDGES.suez || []);
+// BAB EL-MANDEB. Same defect the Suez set had: PASS_EDGES.babelmandeb tags only ONE link
+// (marnet_5354 <-> marnet_4231), and a second runs straight down the strait beside it
+// (marnet_4231 <-> marnet_7803, 97 nm). Cutting the tagged edge alone added just 74 nm to
+// Jeddah-Singapore - the strait stayed open. Every edge in the graph that crosses 12.90N
+// between 41.5E and 45.0E was enumerated; there are exactly these two, crossing at 43.10E
+// and 43.37E, both inside the narrows. Cutting both closes it.
+// Suez itself stays OPEN under this flag, which is correct: a Med-to-Red-Sea voyage
+// (Eleusis-Jeddah, say) still transits the canal and never passes Bab el-Mandeb.
+const BAB_EDGE_SET = pairSet([["marnet_5354","marnet_4231"],["marnet_4231","marnet_7803"]]);
 // Gulf of Aden / Somali Basin high-risk (piracy) area — not tagged in the source dataset (it's a
 // security designation, not a permanent geographic feature), so identified here by a bounding-box
 // scan of the network itself. Used for the optional Avoid Piracy Zone routing preference.
@@ -11386,9 +11402,9 @@ function buildAdjExcluding(excludeSet){
 // Alternate adjacencies: real Suez Canal segments removed (dataset's own "pass" tag), the Gulf of
 // Aden / Somali Basin high-risk area removed (geographic bounding-box scan), and both combined.
 const EMPTY_SET = new Set();
-const ADJ_NO_SUEZ = buildAdjExcluding(SUEZ_EDGE_SET);
+const ADJ_NO_BAB = buildAdjExcluding(BAB_EDGE_SET);
 const ADJ_NO_PIRACY = buildAdjExcluding(PIRACY_EDGE_SET);
-const ADJ_NO_BOTH = buildAdjExcluding(new Set([...SUEZ_EDGE_SET, ...PIRACY_EDGE_SET]));
+const ADJ_NO_BOTH = buildAdjExcluding(new Set([...BAB_EDGE_SET, ...PIRACY_EDGE_SET]));
 
 // ---------- Routing ----------
 // The network is 8,636 nodes. The old search kept distances in a plain object and found the next
@@ -11423,11 +11439,11 @@ function csrFor(adj){
   _csrCache.set(adj, c);
   return c;
 }
-function dijkstra(src,dst,avoidSuez,avoidPiracy){
+function dijkstra(src,dst,avoidBab,avoidPiracy){
   if(!(src in NODES) || !(dst in NODES)) return null;
   let adj = ADJ;
-  if(avoidSuez && avoidPiracy) adj = ADJ_NO_BOTH;
-  else if(avoidSuez) adj = ADJ_NO_SUEZ;
+  if(avoidBab && avoidPiracy) adj = ADJ_NO_BOTH;
+  else if(avoidBab) adj = ADJ_NO_BAB;
   else if(avoidPiracy) adj = ADJ_NO_PIRACY;
   const C = csrFor(adj), head = C.head, eTo = C.to, eW = C.w, n = C.n;
   const s = NODE_IX.get(src), t = NODE_IX.get(dst);
@@ -12068,7 +12084,7 @@ function runCalc(){
   const calls = rotation.filter(c=>c.port && NODES[c.port]);
   if(calls.length<2){ resultsArea.innerHTML='<div class="placeholder">Enter at least two ports in the Port Rotation, then hit Calculate Voyage.</div>'; queueSave(); return; }
 
-  const avoidSuezPref = document.getElementById('avoid_suez').checked;
+  const avoidBabPref = document.getElementById('avoid_bab').checked;
   const avoidPiracyPref = document.getElementById('avoid_piracy').checked;
   const distAdjFactor = 1;
 
@@ -12114,7 +12130,7 @@ function runCalc(){
       mapSegments.push(pts);
       totalNM += nm;
     } else {
-      const r = dijkstra(src, dst, avoidSuezPref, avoidPiracyPref);
+      const r = dijkstra(src, dst, avoidBabPref, avoidPiracyPref);
       if(!r){ feasible=false; break; }
       const nm = r.total * distAdjFactor;
       legs.push({from:src, to:dst, nm, gc, mode:'auto', cargoFrac});
@@ -12131,7 +12147,7 @@ function runCalc(){
   if(calls.length > 1){
     const first = calls[0].port, last = calls[calls.length-1].port;
     if(first !== last){
-      const rh = dijkstra(last, first, avoidSuezPref, avoidPiracyPref);
+      const rh = dijkstra(last, first, avoidBabPref, avoidPiracyPref);
       if(rh) wsHomeNM = rh.total * distAdjFactor;
     }
   }
@@ -12243,7 +12259,7 @@ function runCalc(){
   if(calls.length >= 2){
     const first = calls[0].port, last = calls[calls.length-1].port;
     if(first !== last){
-      const dOut = dijkstra(first, last, avoidSuezPref, avoidPiracyPref);
+      const dOut = dijkstra(first, last, avoidBabPref, avoidPiracyPref);
       if(dOut){
         wsPairNM = dOut.total * distAdjFactor;
         wsPorts  = worldscalePortCost([calls[0], calls[calls.length-1]]);
