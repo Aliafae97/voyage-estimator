@@ -665,6 +665,12 @@ const NODES = {
   vip_cape_santiago:{name:"Cape Santiago (SW of cape)",lat:13.6800,lon:120.5800,type:"waypoint"},
   vip_lubang_n:{name:"Lubang Channel (N of Lubang Is.)",lat:14.0000,lon:120.4500,type:"waypoint"},
   vip_mindoro_n:{name:"Mindoro Strait (N entrance)",lat:13.5300,lon:120.2500,type:"waypoint"},
+  hastings:{name:"Hastings, Australia",alt:"Western Port Westernport Victoria Long Island Point AU",lat:-38.3000,lon:145.2100,region:"Australia & NZ",type:"port"},
+  botany_bay:{name:"Botany Bay (Port Botany), Australia",alt:"Port Botany Sydney Kurnell NSW AU",lat:-33.9800,lon:151.2200,region:"Australia & NZ",type:"port"},
+  bell_bay:{name:"Bell Bay, Australia",alt:"Bell Bay Tamar Georgetown Launceston Tasmania AU",lat:-41.1300,lon:146.8700,region:"Australia & NZ",type:"port"},
+  westernport_ent:{name:"Western Port (Western Entrance)",lat:-38.4900,lon:145.1300,type:"waypoint"},
+  cape_liptrap_s:{name:"S of Cape Liptrap",lat:-39.1500,lon:145.9000,type:"waypoint"},
+  tamar_mouth:{name:"Tamar Heads (Low Head)",lat:-41.0300,lon:146.8000,type:"waypoint"},
   davao:{name:"Davao, Philippines",alt:"Davao City Mindanao Sasa PH",lat:7.0700,lon:125.6000,region:"North Asia",type:"port"},
   general_santos:{name:"General Santos, Philippines",alt:"GenSan Sarangani Bay Makar Mindanao PH",lat:6.1000,lon:125.1700,region:"North Asia",type:"port"},
   batangas:{name:"Batangas, Philippines",alt:"Batangas Bay Luzon PH",lat:13.7500,lon:121.0500,region:"North Asia",type:"port"},
@@ -9399,6 +9405,20 @@ const EDGES = [
   // for the westbound leg to Borneo. A direct general_santos-marnet_2859 edge was rejected: it
   // passes within 2 nm of the Mindanao coast east of the bay mouth.
   ["general_santos","marnet_7134"], ["general_santos","marnet_2860"],
+  // HASTINGS sits inside Western Port, which opens south through the Western Entrance between
+  // Phillip Island and the mainland. From there the only way east is round Cape Liptrap
+  // (38.90S 145.92E) and then Wilsons Promontory. A direct westernport_ent-marnet_4872 edge was
+  // rejected: it runs straight over Cape Liptrap. cape_liptrap_s is 15 nm south of the cape and
+  // passes about 4 nm south of the Promontory tip, which is where ships actually round it.
+  ["hastings","westernport_ent"], ["westernport_ent","cape_liptrap_s"],
+  ["cape_liptrap_s","marnet_4872"],
+  // BOTANY BAY is its own port, 10 nm south of Sydney Harbour by sea. marnet_1516 is 14 nm due
+  // east, open water off the heads.
+  ["botany_bay","marnet_1516"],
+  // BELL BAY is 6 nm up the Tamar from Low Head. The graph had NOTHING in Tasmania, so the
+  // river mouth is added and given both Bass Strait exits: marnet_4578 to the north-west and
+  // marnet_4579 to the north-east, which clears Flinders Island by 29 nm.
+  ["bell_bay","tamar_mouth"], ["tamar_mouth","marnet_4578"], ["tamar_mouth","marnet_4579"],
   ["pacific_bridge","los_angeles"], ["pacific_bridge","long_beach"], ["pacific_bridge","vancouver"],
   ["port_sudan","yanbu"], ["jebel_ali","jubail"],
   ["mombasa","guardafui_clear"], ["fujairah","guardafui_clear"], ["jubail","guardafui_clear"], ["ras_tanura","guardafui_clear"],
