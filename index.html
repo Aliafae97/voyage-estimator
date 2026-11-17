@@ -665,6 +665,7 @@ const NODES = {
   vip_cape_santiago:{name:"Cape Santiago (SW of cape)",lat:13.6800,lon:120.5800,type:"waypoint"},
   vip_lubang_n:{name:"Lubang Channel (N of Lubang Is.)",lat:14.0000,lon:120.4500,type:"waypoint"},
   vip_mindoro_n:{name:"Mindoro Strait (N entrance)",lat:13.5300,lon:120.2500,type:"waypoint"},
+  daesan:{name:"Daesan, South Korea",alt:"Daesan Seosan Chungcheongnam KR",lat:37.0000,lon:126.3500,region:"North Asia",type:"port"},
   dalian:{name:"Dalian, China",alt:"Dalian Dayaowan Liaoning CN",lat:38.9300,lon:121.6300,region:"North Asia",type:"port"},
   yingkou:{name:"Yingkou, China",alt:"Yingkou Bayuquan Liaodong Bay Liaoning CN",lat:40.2800,lon:122.0900,region:"North Asia",type:"port"},
   hastings:{name:"Hastings, Australia",alt:"Western Port Westernport Victoria Long Island Point AU",lat:-38.3000,lon:145.2100,region:"Australia & NZ",type:"port"},
@@ -9428,6 +9429,30 @@ const EDGES = [
   // YINGKOU (Bayuquan) is at the head of Liaodong Bay. marnet_3492 is 13 nm north-west, out in
   // the bay, and already links down to marnet_3491 and the Bohai Strait.
   ["yingkou","marnet_3492"],
+  // DAESAN is on the Korean west coast north of the Taean peninsula. marnet_2857 (37.40N
+  // 125.50E) is 47 nm WNW and is the only real node on that coast - marnet_2858 is a dead-end
+  // stub hanging off 2857, so hooking to it would add nothing. The line to 2857 runs north of
+  // the Taean peninsula and is offshore from 126.14E westward.
+  ["daesan","marnet_2857"],
+  // 2857 is 24 nm NORTH of Daesan, so on its own every southbound voyage went the wrong way
+  // first: Daesan-Shanghai read 537 against Netpas 448. marnet_4958 (35.42N 123.98E) is the
+  // southward exit. It passes about 4 nm west of the Taean peninsula tip and is then 20+ nm
+  // offshore all the way, giving 504 (+12.5%).
+  // A direct daesan-marnet_284 edge would give 470 (+4.9%) but was REJECTED: that line sits on
+  // the Taean peninsula at 36.67N 126.26E and passes 2.5 nm from Oeyeondo. Netpas gets 448
+  // because it has the island geometry of the Korean west coast and this graph does not, so
+  // Daesan legs run about 12% long rather than cut through islands that are not modelled.
+  ["daesan","marnet_4958"],
+  // YELLOW SEA DIRECT. AMER's Netpas track for Daesan-Shanghai runs almost straight down the
+  // open Yellow Sea, well west of Jeju. The graph's chain went 4958-4780-283-3949 and bulged
+  // about 95 nm EAST of that line before cutting back. 4958-3013 is the straight run: the whole
+  // edge sits between 33.4N and 35.4N at 123.0-124.0E, deep open water with no islands.
+  // Daesan-Shanghai 504 -> 485, Daesan-Kaohsiung 1,022 -> 1,002.
+  // The remaining 8% over Netpas is the Yangtze approach (3564-4791-8342 round the Changjiang
+  // Kou pilot station, which is real) plus marnet_4958 sitting 50 nm west of the true track.
+  // Closing it needs a node near 35.4N 125.0E; the two-waypoint version was tried and rejected,
+  // it saved only 7 nm and its departure line ran onto the Taean peninsula tip.
+  ["marnet_4958","marnet_3013"],
   // MALACCA STRAIT CROSSING. Port Klang-Belawan read 210 nm against Netpas 172 on a 169 nm
   // great circle. Two faults, both pre-existing:
   //  1. Nothing crossed the strait from the Klang side, so traffic ran 50 nm SOUTH to
