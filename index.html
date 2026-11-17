@@ -665,6 +665,8 @@ const NODES = {
   vip_cape_santiago:{name:"Cape Santiago (SW of cape)",lat:13.6800,lon:120.5800,type:"waypoint"},
   vip_lubang_n:{name:"Lubang Channel (N of Lubang Is.)",lat:14.0000,lon:120.4500,type:"waypoint"},
   vip_mindoro_n:{name:"Mindoro Strait (N entrance)",lat:13.5300,lon:120.2500,type:"waypoint"},
+  dalian:{name:"Dalian, China",alt:"Dalian Dayaowan Liaoning CN",lat:38.9300,lon:121.6300,region:"North Asia",type:"port"},
+  yingkou:{name:"Yingkou, China",alt:"Yingkou Bayuquan Liaodong Bay Liaoning CN",lat:40.2800,lon:122.0900,region:"North Asia",type:"port"},
   hastings:{name:"Hastings, Australia",alt:"Western Port Westernport Victoria Long Island Point AU",lat:-38.3000,lon:145.2100,region:"Australia & NZ",type:"port"},
   botany_bay:{name:"Botany Bay (Port Botany), Australia",alt:"Port Botany Sydney Kurnell NSW AU",lat:-33.9800,lon:151.2200,region:"Australia & NZ",type:"port"},
   bell_bay:{name:"Bell Bay, Australia",alt:"Bell Bay Tamar Georgetown Launceston Tasmania AU",lat:-41.1300,lon:146.8700,region:"Australia & NZ",type:"port"},
@@ -9419,12 +9421,31 @@ const EDGES = [
   // river mouth is added and given both Bass Strait exits: marnet_4578 to the north-west and
   // marnet_4579 to the north-east, which clears Flinders Island by 29 nm.
   ["bell_bay","tamar_mouth"], ["tamar_mouth","marnet_4578"], ["tamar_mouth","marnet_4579"],
+  // DALIAN sits at the tip of the Liaodong peninsula. marnet_7015 is 0.7 nm off the berth and
+  // already carries the chain out through the Bohai Strait (7015-3985-3937), so nothing else
+  // is needed. A direct hook west to marnet_3937 was rejected - that line crosses the peninsula.
+  ["dalian","marnet_7015"],
+  // YINGKOU (Bayuquan) is at the head of Liaodong Bay. marnet_3492 is 13 nm north-west, out in
+  // the bay, and already links down to marnet_3491 and the Bohai Strait.
+  ["yingkou","marnet_3492"],
+  // MALACCA STRAIT CROSSING. Port Klang-Belawan read 210 nm against Netpas 172 on a 169 nm
+  // great circle. Two faults, both pre-existing:
+  //  1. Nothing crossed the strait from the Klang side, so traffic ran 50 nm SOUTH to
+  //     marnet_7415 first. marnet_134 is Port Klang's own sea buoy; 134-malacca_nw_5 is the
+  //     real crossing and stays mid-strait the whole way.
+  //  2. belawan-marnet_7415 and medan-marnet_7415 cut the corner of the Sumatra bulge and run
+  //     roughly 60 nm OVERLAND - the line sits inland at 3.30N 99.35E and 3.46N 99.13E. Both
+  //     are removed. kuala_tanjung-marnet_7415 is kept: it hugs that coast 7 nm off, which is
+  //     correct, because Kuala Tanjung lies south-east of the bulge, not behind it.
+  // malacca_nw_5-belawan replaces them, running 5-8 nm off the coast past Kuala Tanjung.
+  // Port Klang-Belawan now reads 169 against Netpas 172.
+  ["marnet_134","malacca_nw_5"], ["malacca_nw_5","belawan"], ["malacca_nw_5","medan"],
   ["pacific_bridge","los_angeles"], ["pacific_bridge","long_beach"], ["pacific_bridge","vancouver"],
   ["port_sudan","yanbu"], ["jebel_ali","jubail"],
   ["mombasa","guardafui_clear"], ["fujairah","guardafui_clear"], ["jubail","guardafui_clear"], ["ras_tanura","guardafui_clear"],
   ["marnet_952","necochea"], ["marnet_952","buenos_aires"], ["marnet_952","montevideo"],
   ["madagascar_clear","durban"], ["madagascar_clear","cape_town"], ["madagascar_clear","richards_bay"],
-  ["port_klang","marnet_134"], ["belawan","marnet_7415"], ["singapore","marnet_2869"], ["jakarta","marnet_1544"], ["surabaya","marnet_7266"],
+  ["port_klang","marnet_134"], ["singapore","marnet_2869"], ["jakarta","marnet_1544"], ["surabaya","marnet_7266"],
   // BAUBAU sits on the WEST coast of Buton Island, on the Buton Strait, so its two exits are
   // both to the south - there is no way east except round the island. Two hooks:
   //   marnet_6919 (6.09S 122.80E), 39 nm SSE - round the south end of Buton and then east,
@@ -9455,7 +9476,7 @@ const EDGES = [
   // water by a wide margin - the position is chosen for that clearance, not read off the chart.
   // A direct 906-2136 edge was rejected: it would pass about 109.2E at the equator, which is
   // on the Kalimantan shore near Pontianak.
-  ["marnet_906","karimata_mid"], ["karimata_mid","marnet_2136"], ["pasir_gudang","marnet_7112"], ["medan","marnet_7415"], ["kijing","marnet_1139"], ["batam","marnet_2869"], ["lubuk_gaung","marnet_1996"], ["aden","marnet_3016"], ["hodeidah","marnet_4285"], ["jeddah","marnet_8338"], ["marnet_8338","jeddah_rabigh_offshore"], ["jeddah_rabigh_offshore","rabigh"], ["suez","marnet_3179"], ["suez","marnet_3180"], ["suez","adabiya"], ["marnet_3125","recalada"], ["marnet_2342","yanbu"], ["port_said","marnet_3182"], ["port_said","suez_canal_north"], ["suez_canal_north","marnet_3180"], ["alexandria","marnet_1774"], ["djibouti","marnet_7802"], ["marnet_8030","marnet_724"], ["marnet_7803","marnet_4231"], ["adabiya","marnet_3179"], ["mombasa","marnet_7464"], ["marnet_7464","pemba_clear"], ["pemba_clear","marnet_5665"], ["dar_es_salaam","marnet_5665"],
+  ["marnet_906","karimata_mid"], ["karimata_mid","marnet_2136"], ["pasir_gudang","marnet_7112"], ["kijing","marnet_1139"], ["batam","marnet_2869"], ["lubuk_gaung","marnet_1996"], ["aden","marnet_3016"], ["hodeidah","marnet_4285"], ["jeddah","marnet_8338"], ["marnet_8338","jeddah_rabigh_offshore"], ["jeddah_rabigh_offshore","rabigh"], ["suez","marnet_3179"], ["suez","marnet_3180"], ["suez","adabiya"], ["marnet_3125","recalada"], ["marnet_2342","yanbu"], ["port_said","marnet_3182"], ["port_said","suez_canal_north"], ["suez_canal_north","marnet_3180"], ["alexandria","marnet_1774"], ["djibouti","marnet_7802"], ["marnet_8030","marnet_724"], ["marnet_7803","marnet_4231"], ["adabiya","marnet_3179"], ["mombasa","marnet_7464"], ["marnet_7464","pemba_clear"], ["pemba_clear","marnet_5665"], ["dar_es_salaam","marnet_5665"],
   // The Tanzania/Mozambique coastal corridor. Without it the graph had only four nodes in the
   // whole box from 9S to 16S and 39E to 43E, so a Dar es Salaam - Nacala run had to swing out
   // east to (-12.0, 43.0) near the Comoros and double back: 692 nm against Netpas's 528.
