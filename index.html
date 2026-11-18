@@ -665,6 +665,13 @@ const NODES = {
   vip_cape_santiago:{name:"Cape Santiago (SW of cape)",lat:13.6800,lon:120.5800,type:"waypoint"},
   vip_lubang_n:{name:"Lubang Channel (N of Lubang Is.)",lat:14.0000,lon:120.4500,type:"waypoint"},
   vip_mindoro_n:{name:"Mindoro Strait (N entrance)",lat:13.5300,lon:120.2500,type:"waypoint"},
+  penghu_ch:{name:"Penghu Channel (mid)",lat:23.5000,lon:119.9500,type:"waypoint"},
+  kaohsiung_w:{name:"W of Kaohsiung",lat:22.6500,lon:119.9000,type:"waypoint"},
+  taiwan_s:{name:"S of Eluanbi (Taiwan S cape)",lat:21.7200,lon:121.0000,type:"waypoint"},
+  taichung_w:{name:"W of Taichung",lat:24.2000,lon:120.1500,type:"waypoint"},
+  taitung:{name:"Tai Tung, Taiwan",alt:"Taitung Taidong Fugang east coast TW",lat:22.7500,lon:121.1500,region:"North Asia",type:"port"},
+  taichung:{name:"Taichung, Taiwan",alt:"Taichung Taizhong west coast TW",lat:24.2900,lon:120.5200,region:"North Asia",type:"port"},
+  yangpu:{name:"Yangpu, China",alt:"Yangpu Hainan Danzhou CN",lat:19.7300,lon:109.2000,region:"North Asia",type:"port"},
   daesan:{name:"Daesan, South Korea",alt:"Daesan Seosan Chungcheongnam KR",lat:37.0000,lon:126.3500,region:"North Asia",type:"port"},
   dalian:{name:"Dalian, China",alt:"Dalian Dayaowan Liaoning CN",lat:38.9300,lon:121.6300,region:"North Asia",type:"port"},
   yingkou:{name:"Yingkou, China",alt:"Yingkou Bayuquan Liaodong Bay Liaoning CN",lat:40.2800,lon:122.0900,region:"North Asia",type:"port"},
@@ -690,7 +697,7 @@ const NODES = {
   cochin:{name:"Cochin (Kochi), India",lat:9.9667,lon:76.2400,region:"India",type:"port"},
   chennai:{name:"Chennai, India",lat:13.0827,lon:80.2900,region:"India",type:"port"},
   kolkata:{name:"Kolkata, India",lat:22.5700,lon:88.3100,region:"India",type:"port"},
-  visakhapatnam:{name:"Visakhapatnam, India",lat:17.6800,lon:83.2200,region:"India",type:"port"},
+  visakhapatnam:{name:"Visakhapatnam, India",alt:"Vizag Vishakhapatnam Andhra IN",lat:17.6800,lon:83.2200,region:"India",type:"port"},
   nhava_sheva:{name:"Nhava Sheva (JNPT), India",lat:18.9500,lon:72.9500,region:"India",type:"port"},
   dammam:{name:"Dammam, Saudi Arabia",lat:26.4333,lon:50.1033,region:"Middle East (Gulf)",type:"port"},
   kuwait_port:{name:"Kuwait City, Kuwait",lat:29.3700,lon:47.9400,region:"Middle East (Gulf)",type:"port"},
@@ -9453,6 +9460,37 @@ const EDGES = [
   // Closing it needs a node near 35.4N 125.0E; the two-waypoint version was tried and rejected,
   // it saved only 7 nm and its departure line ran onto the Taean peninsula tip.
   ["marnet_4958","marnet_3013"],
+  // TAI TUNG is on Taiwan's east coast. marnet_3853 is 58 nm SSE, 17 nm offshore, and already
+  // carries the rounding of the south tip (3853-7048 passes 7 nm east of Eluanbi). AMER's
+  // Netpas track goes SOUTH about, not north, which is what this gives.
+  ["taitung","marnet_3853"],
+  // TAICHUNG. The graph had NOTHING on Taiwan's west coast between marnet_7196 (24.63N) and
+  // marnet_7047 (22.46N), so every coastal leg swung out to 120.00E and back: Taichung-Kaohsiung
+  // read 197 against Netpas 139, and it went NORTH to 24.63N first. Two waypoints put the route
+  // in the Penghu Channel, which is the real lane:
+  //   taichung_w  - due west of the harbour, clear of the coast at 120.5E
+  //   penghu_ch   - mid-channel, 20 nm east of Penghu and 14 nm west of the Tainan coast
+  // The leg taichung_w-penghu_ch passes 8 nm west of the Mailiao jetty, which is why Taichung
+  // is not hooked straight to penghu_ch - that line clips Mailiao.
+  // Taichung-Kaohsiung 197 -> 159, Tai Tung-Taichung 328 -> 295 (Netpas 139 and 259).
+  // Both still read about 14% long; the margins above come from coastline fitting, not survey
+  // data, so no waypoint was placed closer in than 7 nm.
+  ["taichung","marnet_7196"], ["taichung","taichung_w"], ["taichung_w","penghu_ch"],
+  ["penghu_ch","marnet_7196"], ["penghu_ch","marnet_7047"],
+  // Refined against AMER's close-up tracks for both Taiwan legs.
+  // kaohsiung_w: the route used to overshoot 28 nm south-west to marnet_7047 and come back.
+  // His track turns in much closer. This vertex is 17 nm due west of the breakwater and the
+  // run down from penghu_ch stays 10-14 nm off the Tainan coast.  Taichung-Kaohsiung 159 -> 137.
+  // taiwan_s: Tai Tung used to reach marnet_3853, 20 nm further east than needed, before
+  // rounding. This vertex rounds the south cape directly.  Tai Tung-Taichung 295 -> 272.
+  // Its latitude is a deliberate choice, not a fit: 21.83N matches Netpas almost exactly (263
+  // vs 259) but passes 1.8 nm off Eluanbi, inside the Qixingyan rocks about 5 nm south of the
+  // cape. 21.72N clears them by roughly 2 nm and costs 9 nm of accuracy. Sea room wins.
+  ["penghu_ch","kaohsiung_w"], ["kaohsiung_w","kaohsiung"], ["kaohsiung_w","marnet_7048"],
+  ["taitung","taiwan_s"], ["taiwan_s","marnet_7048"],
+  // YANGPU is on Hainan's north-west coast. marnet_233 is 48 nm NW in the Beibu Gulf. A hook
+  // south-west to marnet_3717 was rejected: that line runs inland across Hainan near Dongfang.
+  ["yangpu","marnet_233"],
   // MALACCA STRAIT CROSSING. Port Klang-Belawan read 210 nm against Netpas 172 on a 169 nm
   // great circle. Two faults, both pre-existing:
   //  1. Nothing crossed the strait from the Klang side, so traffic ran 50 nm SOUTH to
