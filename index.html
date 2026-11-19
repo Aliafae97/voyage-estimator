@@ -669,6 +669,7 @@ const NODES = {
   kaohsiung_w:{name:"W of Kaohsiung",lat:22.6500,lon:119.9000,type:"waypoint"},
   taiwan_s:{name:"S of Eluanbi (Taiwan S cape)",lat:21.7200,lon:121.0000,type:"waypoint"},
   taichung_w:{name:"W of Taichung",lat:24.2000,lon:120.1500,type:"waypoint"},
+  quanzhou:{name:"Quanzhou, China",alt:"Quanzhou Shihu Weitou Fujian CN",lat:24.8000,lon:118.6800,region:"North Asia",type:"port"},
   taitung:{name:"Tai Tung, Taiwan",alt:"Taitung Taidong Fugang east coast TW",lat:22.7500,lon:121.1500,region:"North Asia",type:"port"},
   taichung:{name:"Taichung, Taiwan",alt:"Taichung Taizhong west coast TW",lat:24.2900,lon:120.5200,region:"North Asia",type:"port"},
   yangpu:{name:"Yangpu, China",alt:"Yangpu Hainan Danzhou CN",lat:19.7300,lon:109.2000,region:"North Asia",type:"port"},
@@ -9488,6 +9489,23 @@ const EDGES = [
   // cape. 21.72N clears them by roughly 2 nm and costs 9 nm of accuracy. Sea room wins.
   ["penghu_ch","kaohsiung_w"], ["kaohsiung_w","kaohsiung"], ["kaohsiung_w","marnet_7048"],
   ["taitung","taiwan_s"], ["taiwan_s","marnet_7048"],
+  // QUANZHOU, on the Fujian coast. Two hooks, checked against AMER's Netpas run
+  // Shanghai-Quanzhou-Taichung-Hong Kong-Singapore:
+  //   marnet_3736  35 nm SW, the coastal node that carries southbound traffic
+  //   taichung_w   88 nm E, the Taiwan Strait crossing - Quanzhou-Taichung 109 vs Netpas 107
+  // A third hook to marnet_5203 (NE, mid-strait) was tried and DROPPED: it let northbound
+  // traffic cut the corner of the Fujian coast and read Shanghai-Quanzhou at 513 against
+  // Netpas 547 - six per cent UNDER. Without it the same leg reads 569, four per cent over,
+  // which is the right side of the line for a cost estimate.
+  ["quanzhou","marnet_3736"], ["quanzhou","taichung_w"],
+  // TAIWAN STRAIT DIAGONAL. Found by the control leg in that same run: Taichung-Hong Kong,
+  // both ports already in the tool, read 493 against Netpas 387 - a 27% pre-existing error
+  // with nothing to do with Quanzhou. The route ran SOUTH to 22.14N before turning west.
+  // Netpas crosses on a straight diagonal and then runs 8-29 nm off the Guangdong coast.
+  // taichung_w-4576 is that diagonal (46 nm clear of the Fujian coast, 31 nm south of
+  // Dongshan); 4576-3022 is the coastal run in to Hong Kong, 8-13 nm off past Shanwei.
+  // Taichung-Hong Kong 493 -> 378. Hong Kong-Quanzhou 354 -> 313.
+  ["taichung_w","marnet_4576"], ["marnet_4576","marnet_3022"],
   // YANGPU is on Hainan's north-west coast. marnet_233 is 48 nm NW in the Beibu Gulf. A hook
   // south-west to marnet_3717 was rejected: that line runs inland across Hainan near Dongfang.
   ["yangpu","marnet_233"],
